@@ -1,0 +1,6 @@
+@startuml c1-contexto
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title rag-pavimentos-mvp: C1 Diagrama de contexto
+
+@enduml

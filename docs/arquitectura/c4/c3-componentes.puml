@@ -1,0 +1,6 @@
+@startuml c3-componentes
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title rag-pavimentos-mvp: C3 Diagrama de componentes
+
+@enduml
