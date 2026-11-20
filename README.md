@@ -14,12 +14,18 @@ MVP of a RAG (retrieval-augmented generation) application that answers natural-l
 ### In the MVP
 
 - Question answering over the tabular pavement data (section, coordinates, PCI, year).
+- Project display as in the demo: project list and project workspace.
+- [assumption] PCI data are kept per project.
 
 ### Out of the MVP
 
-- PDF documents.
-- Map.
+- PDF documents and PDF extraction.
+- Public pavement data sources.
+- Map and network view.
 - Specifications.
+- Workbench (mix design, material characterization, pavement life prediction and construction acceptance tools).
+
+PDFs and other file types come later. Loading PCI data must allow adding them without rework.
 
 ## Repository structure
 

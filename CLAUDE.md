@@ -4,8 +4,11 @@
 - Proposal for a government agency that may fund development.
 - MVP goal: answer natural-language questions about tabular pavement data
   (section, coordinates, PCI, year).
-- Out of MVP scope: PDFs, map, specifications, network view. PDFs and other
-  file types come later, so ingestion must be extensible.
+- Out of MVP scope: PDFs, map, specifications, network view, public data
+  sources, workbench. PDFs and other file types come later, so ingestion
+  must be extensible.
+- The project display from the demo (project list and project workspace)
+  stays in the MVP.
 
 ## Design constraints
 - Priority: an MVP that deploys fast. Prefer a modular monolith over

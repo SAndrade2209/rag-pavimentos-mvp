@@ -31,6 +31,7 @@ This use case is a load, not a question, so it gives example requests. The year 
 - A load summary: rows added, duplicates by section and year, and rejected rows with the reason for each.
 - [assumption] A row is rejected if section, PCI or year is missing, or if PCI is outside the 0 to 100 scale.
 - Data loaded for one client are visible only to that client's users.
+- [assumption] Each load goes into a project.
 
 ## Open items
 - Formats beyond CSV, and the structure of each client's database exports.
@@ -39,3 +40,4 @@ This use case is a load, not a question, so it gives example requests. The year 
 - How a repeated section and year is resolved after it is reported.
 - Which client data Continuum consultants can access.
 - PDFs and other file types are out of phase 1. CLAUDE.md requires that loading can be extended to them later.
+- After a project finishes, its PCI data are kept in a registry and not deleted. Scope and access are not decided.

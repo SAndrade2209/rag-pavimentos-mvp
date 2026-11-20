@@ -22,3 +22,5 @@ Phase 1 data: PCI information only (section, coordinates, PCI, year), from airpo
 - Fields beyond section, coordinates, PCI and year (network or district ID, branch use or functional class, area or length).
 - Coordinate format (point or line geometry) and coordinate reference system.
 - Data formats beyond CSV, and the structure of each client's database exports (UC-05).
+- Whether PCI data are grouped by project, and whether UC-01 to UC-04 answer within one project or across all of a client's data.
+- Registry for finished projects: their PCI data are kept and not deleted. Scope and access are not decided.
