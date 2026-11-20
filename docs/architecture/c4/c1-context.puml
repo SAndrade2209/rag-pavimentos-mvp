@@ -3,4 +3,27 @@
 
 title rag-pavimentos-mvp: C1 System context diagram
 
+' Actors and the use cases each one performs (docs/use-cases/).
+Person(airport_staff, "Airport pavement management staff", "Loads airfield PCI data, selects M&R candidates, reports condition and plans inspections.")
+Person(pm_engineer, "Pavement management engineer", "Loads PCI data, selects M&R candidates and reports network condition.")
+Person(district_staff, "District/maintenance staff", "Selects M&R candidates and plans inspections on assigned sections.")
+Person(consultant, "Continuum consultant", "Secondary user. Loads client PCI data on the client's behalf and answers client requests.")
+
+' Separate client role confirmed. The role name is a placeholder.
+Person(data_admin, "Client data administrator", "Separate client role that loads the client's PCI data files.")
+
+System(rag, "RAG pavement MVP", "Answers natural-language questions about tabular PCI data (section, coordinates, PCI, year) with source rows and downloadable tables.")
+
+' External system. PCI data reach the MVP in two ways: file upload (CSV) or export from this system.
+System_Ext(pms, "Client pavement management system", "Existing client database with PCI records per section and survey year, with coordinates. Airport or road network.")
+
+Rel(airport_staff, rag, "Uploads PCI data files; asks questions; receives answers, source rows and tables", "UC-01 to UC-05")
+Rel(pm_engineer, rag, "Uploads PCI data files; asks questions; receives answers, source rows and tables", "UC-01, UC-02, UC-03, UC-05")
+Rel(district_staff, rag, "Asks questions; receives answers, source rows and tables", "UC-01, UC-04")
+Rel(consultant, rag, "Uploads PCI data files; asks questions; receives answers, source rows and tables", "UC-01, UC-02, UC-05")
+
+Rel(data_admin, rag, "Uploads PCI data files (section, coordinates, PCI, year)", "UC-05")
+Rel(pms, rag, "Provides PCI records as exports (section, coordinates, PCI, year)", "UC-05")
+
+SHOW_LEGEND()
 @enduml

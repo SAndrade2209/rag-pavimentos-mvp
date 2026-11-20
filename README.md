@@ -25,7 +25,7 @@ MVP of a RAG (retrieval-augmented generation) application that answers natural-l
 
 | Folder | Contents |
 |---|---|
-| `docs/use-cases/` | The 3 or 4 main use cases of the MVP, business-oriented. |
+| `docs/use-cases/` | The main use cases of the MVP, business-oriented. |
 | `docs/architecture/` | Architecture documentation. `quality-attributes.md` holds the prioritized quality attributes. |
 | `docs/architecture/c4/` | C4 model diagrams as code (PlantUML with the C4-PlantUML library): C1 context, C2 containers and C3 components. |
 | `docs/architecture/adr/` | Architecture decision records (ADRs). `0000-template.md` is the template; each ADR is named `YYYY-MM-DD-short-title.md`. |
