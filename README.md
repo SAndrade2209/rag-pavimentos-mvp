@@ -1,33 +1,33 @@
 # rag-pavimentos-mvp
 
-## Objetivo
+## Objective
 
-MVP de una aplicación RAG (generación aumentada por recuperación) que responde preguntas en lenguaje natural sobre datos tabulares de pavimentos. Los datos incluyen los campos:
+MVP of a RAG (retrieval-augmented generation) application that answers natural-language questions about tabular pavement data. The data include the fields:
 
-- Sección
-- Coordenadas
+- Section
+- Coordinates
 - PCI (Pavement Condition Index)
-- Año
+- Year
 
-## Alcance
+## Scope
 
-### Incluido en el MVP
+### In the MVP
 
-- Preguntas y respuestas sobre los datos tabulares de pavimentos (sección, coordenadas, PCI, año).
+- Question answering over the tabular pavement data (section, coordinates, PCI, year).
 
-### Fuera del MVP
+### Out of the MVP
 
-- Documentos PDF.
-- Mapa.
-- Especificaciones.
+- PDF documents.
+- Map.
+- Specifications.
 
-## Estructura del repositorio
+## Repository structure
 
-| Carpeta | Contenido |
+| Folder | Contents |
 |---|---|
-| `docs/casos-de-uso/` | Los 3 o 4 casos de uso principales del MVP, orientados al negocio. |
-| `docs/arquitectura/` | Documentación de arquitectura. `atributos-calidad.md` contiene los atributos de calidad priorizados. |
-| `docs/arquitectura/c4/` | Diagramas del modelo C4 como código (PlantUML con la librería C4-PlantUML): C1 contexto, C2 contenedores y C3 componentes. |
-| `docs/arquitectura/adr/` | Registros de decisiones de arquitectura (ADR). `0000-plantilla.md` es la plantilla; cada ADR se nombra `YYYY-MM-DD-titulo-corto.md`. |
-| `docs/estimaciones/` | Estimaciones del MVP (esfuerzo, plazo y costo). |
-| `demo/` | Código y material de la demostración del MVP. |
+| `docs/use-cases/` | The 3 or 4 main use cases of the MVP, business-oriented. |
+| `docs/architecture/` | Architecture documentation. `quality-attributes.md` holds the prioritized quality attributes. |
+| `docs/architecture/c4/` | C4 model diagrams as code (PlantUML with the C4-PlantUML library): C1 context, C2 containers and C3 components. |
+| `docs/architecture/adr/` | Architecture decision records (ADRs). `0000-template.md` is the template; each ADR is named `YYYY-MM-DD-short-title.md`. |
+| `docs/estimates/` | MVP estimates (effort, schedule and cost). |
+| `demo/` | Code and material for the MVP demonstration. |

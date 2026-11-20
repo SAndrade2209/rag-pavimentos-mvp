@@ -1,6 +1,6 @@
-@startuml c2-contenedores
+@startuml c2-containers
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-title rag-pavimentos-mvp: C2 Diagrama de contenedores
+title rag-pavimentos-mvp: C2 Container diagram
 
 @enduml
