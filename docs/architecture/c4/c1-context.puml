@@ -29,7 +29,6 @@ System(platform, "Pavement data platform MVP", "Stores PCI data (section, coordi
 ' External system. PCI data reach the MVP in two ways (ADR 2026-11-23-load-pci-data-by-upload-and-connection):
 ' people upload CSV or Excel files, and, for the funding agency only, an automatic connection to this system.
 ' The connection method, and so the direction of the arrow, is decided in a later ADR.
-' Sign-in method not decided (UC-07): an identity provider is not shown until it is.
 System_Ext(pms, "Client pavement management system", "Existing client database with PCI records per section and survey year, with coordinates. Airport or road network.")
 
 Rel(airport_staff, platform, "Signs in; uploads and corrects PCI data; asks questions; views project and section PCI", "UC-01 to UC-07, UC-09")
@@ -44,6 +43,15 @@ Rel(project_lead, platform, "Signs in; grants and removes access to their projec
 Rel(continuum_admin, platform, "Sets up clients and their first manager; grants and removes project access", "UC-07, UC-08")
 
 Rel(platform, pms, "Automatic connection for the funding agency: PCI records (section, coordinates, PCI, year); method pending", "UC-05", $tags="pending")
+
+' Sign-in (ADR 2026-11-23-delegate-sign-in-to-an-identity-service). Hosted identity service in the MVP.
+System_Ext(idp, "Identity service", "Hosted. Platform accounts with MFA, single sign-on with client identity providers, and Google sign-in for Continuum staff. User data kept in the US.")
+System_Ext(client_idp, "Client identity provider", "The client organization's own account system. Only for clients that require single sign-on.")
+System_Ext(google, "Continuum Google Workspace", "Continuum's company accounts, with two-step verification required.")
+
+Rel(platform, idp, "Delegates sign-in; accepts only signed sign-in tokens", "OpenID Connect; UC-07")
+Rel(idp, client_idp, "Signs in client staff with their organization's account", "Single sign-on; UC-07")
+Rel(idp, google, "Signs in Continuum staff", "UC-07")
 
 SHOW_LEGEND()
 @enduml

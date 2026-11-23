@@ -27,7 +27,9 @@ Person(continuum_admin, "Continuum administrator")
 ' CSV and Excel files are uploaded by people through the web application (UC-05).
 ' For the funding agency only, the API application also has an automatic connection to this system.
 ' Its method, and so the direction of the arrow, is pending (ADR 2026-11-23-load-pci-data-by-upload-and-connection).
-' Sign-in method not decided (UC-07): an identity provider is not shown until it is.
+' Sign-in (ADR 2026-11-23-delegate-sign-in-to-an-identity-service). The client identity providers and
+' Continuum's Google Workspace connect to the identity service, not to the containers; they are shown in C1.
+System_Ext(idp, "Identity service", "Hosted. Platform accounts with MFA, single sign-on with client identity providers, Google sign-in for Continuum staff. User data kept in the US.")
 System_Ext(pms, "Client pavement management system", "Existing client database with PCI records per section and survey year, with coordinates.")
 
 System_Boundary(platform, "Pavement data platform MVP") {
@@ -61,6 +63,8 @@ Rel(api, llm, "Sends the question and retrieved PCI rows; receives the answer te
 Rel(api, db, "Reads and writes PCI records, projects, permissions and change history", "SQL; UC-01 to UC-09")
 Rel(api, files, "Stores and reads original uploaded files", "UC-05, UC-09")
 Rel(api, pms, "Automatic connection for the funding agency: PCI records", "Method pending; UC-05", $tags="pending")
+Rel(web, idp, "Sends users to sign in; receives a signed sign-in token", "OpenID Connect; UC-07")
+Rel(api, idp, "Checks that sign-in tokens are valid", "OpenID Connect; UC-07")
 
 SHOW_LEGEND()
 @enduml

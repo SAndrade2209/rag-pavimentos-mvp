@@ -46,6 +46,6 @@ Access is granted per project (UC-08). [assumption] Permission levels:
 - Coordinate format (point or line geometry) and coordinate reference system.
 - Data formats beyond CSV and Excel, and the structure of each client's files (UC-05).
 - Whether UC-01 to UC-04 answer within the selected project or across all projects the user can access.
-- Sign-in method: platform accounts, or the agency's or airport's own accounts (UC-07).
+- Which hosted identity service is used for sign-in (UC-07).
 - How a section loaded through different projects is matched to the same network section (UC-05).
 - Dashboards beyond the UC-06 project overview and section view: not confirmed.
