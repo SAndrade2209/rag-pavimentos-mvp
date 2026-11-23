@@ -28,8 +28,9 @@ This use case is a load, not a question, so it gives example requests. The year 
 
 ## Expected result
 - New survey years are added. Existing survey years are kept.
-- A section and year that already exist in the MVP are reported to the loader and not overwritten.
-- A load summary: rows added, duplicates by section and year, and rejected rows with the reason for each.
+- A section and year that already exist are a conflict: the existing value stays, and the load summary shows both values. A user with the Correct and delete permission can accept the new value as a correction (UC-09), with a reason.
+- A load summary: rows added, conflicts, rejected rows with the reason for each, and column mapping problems.
+- If a load fails, it can be run again without duplicating data.
 - [assumption] A row is rejected if section, PCI or year is missing, or if PCI is outside the 0 to 100 scale.
 - Data loaded for one client are visible only to that client's users.
 - Each load comes in through a project. The PCI records are stored for the airport or road network and kept for every survey year. Nothing is deleted when the project ends.
@@ -39,6 +40,5 @@ This use case is a load, not a question, so it gives example requests. The year 
 - Formats beyond CSV and Excel, and the structure of each client's files.
 - How the automatic connection for the funding agency works: the platform reads its database, reads through its system's API, or receives scheduled exports. To be decided in an ADR.
 - How column names in each client's files map to section, coordinates, PCI and year.
-- How a repeated section and year is resolved after it is reported.
 - PDFs and other file types are out of phase 1. CLAUDE.md requires that loading can be extended to them later.
 - How a section loaded through different projects is matched to the same network section. Example from the demo: the same airfield sections carry PCI from the airport's pavement management program and from a later consultant survey.

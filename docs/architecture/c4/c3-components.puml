@@ -1,6 +1,119 @@
 @startuml c3-components
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
 
-title rag-pavimentos-mvp: C3 Component diagram
+title rag-pavimentos-mvp: C3 Component diagram (API application)
 
+' Structure decided in ADR 2026-11-23-backend-modular-monolith-with-data-layers.
+' One deployable, split into modules by business area. Each module owns its tables.
+' The platform database is drawn with its schemas to show the bronze, silver and gold layers.
+' It is still one database container (C2), with row-level security on every schema.
+' Secrets (language model, identity service, agency connection) come from the cloud provider's
+' secret manager, injected as settings when the application starts.
+
+AddElementTag("pending", $borderStyle=DashedLine(), $legendText="Decision pending (ADR)")
+AddElementTag("assumption", $borderStyle=DottedLine(), $legendText="[assumption]")
+AddRelTag("pending", $lineStyle=DashedLine(), $legendText="Method pending (ADR)")
+
+' Containers and external systems from C2.
+Container(web, "Web application", "Runs in the browser", "Sends every request to the API application.")
+System_Ext(idp, "Identity service", "Hosted. Issues sign-in tokens (OpenID Connect).")
+System_Ext(pms, "Client pavement management system", "Funding agency only. Source of the automatic connection.")
+Container(llm, "Language model", "Hosted or self-hosted, not decided", "Reached only through the language model interface.", $tags="pending")
+ContainerDb(files, "File storage", "", "Original uploaded files.", $tags="assumption")
+
+Container_Boundary(api, "API application (modular monolith)") {
+
+  Boundary(m_access, "Access module") {
+    Component(guard, "Access guard", "", "On every request: checks the sign-in token, resolves user and client, loads project permissions, sets the client for row-level security. Denies by default. UC-07.")
+    Component(access_mgmt, "Access management", "", "Grants and removes project access and permissions. UC-08.")
+  }
+
+  Boundary(m_projects, "Projects module") {
+    Component(projects, "Projects", "", "Project list and workspace, limited to the projects granted to the user. UC-06, UC-07.")
+  }
+
+  Boundary(m_loading, "Loading module") {
+    Component(jobs, "Load jobs", "", "Runs uploads and agency connection runs as retryable background jobs in the same process, tracked in a job table. Running a load again does not duplicate rows. UC-05.")
+    Component(adapters, "Input adapters", "CSV, Excel, agency connection", "Read each source into rows for bronze, using the column mapping saved per client. UC-05.")
+    Component(validation, "Validation and load summary", "", "Moves rows from bronze to silver with the UC-05 checks. Lists rows added, conflicts (existing and new value) and rejected rows with the reason. UC-05.")
+  }
+
+  Boundary(m_pci, "PCI data module") {
+    Component(corrections, "Corrections", "", "Corrects or deletes PCI values as new versions with who, when and why. Resolves load conflicts. UC-09.")
+    Component(gold_refresh, "Gold refresh", "", "Rebuilds the gold serving tables from silver after each load or correction.")
+  }
+
+  Boundary(m_views, "Views module") {
+    Component(views, "Project and section views", "", "Project overview (latest PCI by section) and section view (PCI by survey year, survey timeline). UC-06.")
+  }
+
+  Boundary(m_qa, "Question answering module") {
+    Component(planner, "Query planner", "", "Asks the model for a query plan built from filters and operations, and validates it. UC-01 to UC-04.")
+    Component(query_builder, "Query builder", "", "Turns the plan into a parameterized query on gold, with client, project and permissions from the access guard. Read-only.")
+    Component(answer_writer, "Answer writer", "", "Asks the model for the answer text from the query results.")
+    Component(answer_checks, "Answer checks", "", "Judge: asks the model whether the plan answers the question. Number check: every number in the text comes from the results.")
+    Component(llm_port, "Language model interface", "", "The only way to reach the model. One adapter per model option.")
+  }
+
+  Boundary(m_audit, "Audit module") {
+    Component(audit, "Audit log", "", "Changes, access decisions, and every answer step: question, plan, query, results, judge verdict, number check.")
+  }
+}
+
+Container_Boundary(db, "Platform database (one database; row-level security on every schema)") {
+  ComponentDb(bronze, "Bronze schema", "", "Every load exactly as received, with who, when and source. Never changed.")
+  ComponentDb(silver, "Silver schema", "", "Validated PCI per network section and survey year. Versions with who, when and why. Conflicts.")
+  ComponentDb(gold, "Gold schema", "", "Serving tables: latest PCI per section, PCI by survey year, project overview, network summaries.")
+  ComponentDb(platform_tables, "Platform tables", "", "Users, clients, projects, permissions, load jobs, audit log.")
+}
+
+' Every request passes the access guard.
+Rel(web, guard, "Sends every request", "JSON over HTTPS")
+Rel(guard, idp, "Checks sign-in tokens", "OpenID Connect; UC-07")
+Rel(guard, platform_tables, "Reads users, clients and permissions; sets the client", "UC-07, UC-08")
+Rel(guard, access_mgmt, "Checked requests", "UC-08")
+Rel(guard, projects, "Checked requests", "UC-06, UC-07")
+Rel(guard, jobs, "Checked load requests", "UC-05")
+Rel(guard, corrections, "Checked correction requests", "UC-09")
+Rel(guard, views, "Checked view requests", "UC-06")
+Rel(guard, planner, "Checked questions", "UC-01 to UC-04")
+Rel(guard, audit, "Access decisions")
+
+Rel(access_mgmt, platform_tables, "Writes project access and permissions", "UC-08")
+Rel(access_mgmt, audit, "Grants and removals")
+Rel(projects, platform_tables, "Reads projects")
+
+' Loading: sources to bronze, then validation to silver, then gold refresh.
+Rel(jobs, adapters, "Runs a load")
+Rel(jobs, validation, "Then validates it")
+Rel(adapters, pms, "Automatic connection for the funding agency", "Method pending; UC-05", $tags="pending")
+Rel(adapters, files, "Stores original files")
+Rel(adapters, bronze, "Writes raw rows with the load record")
+Rel(validation, bronze, "Reads raw rows")
+Rel(validation, silver, "Writes validated PCI; records conflicts")
+Rel(validation, gold_refresh, "Triggers refresh")
+Rel(validation, audit, "Load summary")
+
+' Corrections and serving tables.
+Rel(corrections, silver, "Writes new versions; resolves conflicts", "UC-09")
+Rel(corrections, gold_refresh, "Triggers refresh")
+Rel(corrections, audit, "Changes with who, when and why")
+Rel(gold_refresh, silver, "Reads current versions")
+Rel(gold_refresh, gold, "Rebuilds serving tables")
+Rel(views, gold, "Reads", "UC-06")
+
+' Grounded answers (ADR 2026-11-23-ground-answers-with-validated-query-plans).
+Rel(planner, llm_port, "Asks for a query plan")
+Rel(planner, query_builder, "Validated plan")
+Rel(query_builder, gold, "Parameterized read-only queries", "UC-01 to UC-04")
+Rel(query_builder, answer_writer, "Query results")
+Rel(answer_writer, llm_port, "Asks for the answer text")
+Rel(answer_writer, answer_checks, "Text, plan and results")
+Rel(answer_checks, llm_port, "Asks the judge")
+Rel(answer_checks, audit, "Answer steps")
+Rel(llm_port, llm, "Calls the model through its adapter", "HTTPS")
+
+Rel(audit, platform_tables, "Writes audit records")
+
+SHOW_LEGEND()
 @enduml

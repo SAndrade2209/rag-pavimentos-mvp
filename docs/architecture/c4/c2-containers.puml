@@ -44,7 +44,8 @@ System_Boundary(platform, "Pavement data platform MVP") {
   Container(llm, "Language model", "Candidates: hosted model API or self-hosted open-weight model", "Turns questions into query plans, checks plans against questions (judge), and writes answer text from the rows the API retrieves. No access to the database. Serves UC-01 to UC-04.", $tags="pending")
 
   ' Client data isolation: see ADR 2026-11-23-isolate-client-data-with-row-level-security.
-  ContainerDb(db, "Platform database", "Candidates: PostgreSQL with PostGIS or Microsoft SQL Server", "PCI records per network section and survey year, with corrected and deleted values kept; projects, users, permissions and change history. Client data isolated: shared tables with row-level security. Serves UC-01 to UC-09.")
+  ' Data layers: see ADR 2026-11-23-backend-modular-monolith-with-data-layers.
+  ContainerDb(db, "Platform database", "Candidates: PostgreSQL with PostGIS or Microsoft SQL Server", "Three data layers as schemas: bronze (loads as received), silver (validated PCI per network section and survey year, with versions), gold (serving tables). Also projects, users, permissions, load jobs and audit log. Client data isolated: shared tables with row-level security. Serves UC-01 to UC-09.")
 
   ' Not required by phase 1 questions. Justified by the evidence requirement and by PDFs later.
   ' If original files are not kept, this container is removed.
