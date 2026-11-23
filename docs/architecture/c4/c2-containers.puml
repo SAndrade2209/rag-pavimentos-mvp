@@ -35,11 +35,13 @@ System_Ext(pms, "Client pavement management system", "Existing client database w
 System_Boundary(platform, "Pavement data platform MVP") {
   Container(web, "Web application", "Candidates: React or Vue (TypeScript)", "Runs in the browser. Project list and workspace, question box, project overview and section view, data loading, access management. Serves UC-01 to UC-09.")
 
-  Container(api, "API application", "Candidates: Python with FastAPI or TypeScript with NestJS", "Modular monolith. Checks per-project permissions, answers questions with source rows, loads and validates PCI data, keeps the change history. Serves UC-01 to UC-09.")
+  Container(api, "API application", "Candidates: Python with FastAPI or TypeScript with NestJS", "Modular monolith. Checks per-project permissions, answers questions with source rows through validated query plans, loads and validates PCI data, keeps the change history. Serves UC-01 to UC-09.")
 
   ' Hosted or self-hosted is the decision. With a hosted model API, client PCI rows leave
   ' the platform and the model becomes an external system in C1.
-  Container(llm, "Language model", "Candidates: hosted model API or self-hosted open-weight model", "Interprets natural-language questions and drafts the answer text from the PCI rows the API retrieves. Serves UC-01 to UC-04.", $tags="pending")
+  ' Grounding (ADR 2026-11-23-ground-answers-with-validated-query-plans): the model has no access to
+  ' the database. It returns query plans, which the API validates and runs, and it sees only the result rows.
+  Container(llm, "Language model", "Candidates: hosted model API or self-hosted open-weight model", "Turns questions into query plans, checks plans against questions (judge), and writes answer text from the rows the API retrieves. No access to the database. Serves UC-01 to UC-04.", $tags="pending")
 
   ' Client data isolation: see ADR 2026-11-23-isolate-client-data-with-row-level-security.
   ContainerDb(db, "Platform database", "Candidates: PostgreSQL with PostGIS or Microsoft SQL Server", "PCI records per network section and survey year, with corrected and deleted values kept; projects, users, permissions and change history. Client data isolated: shared tables with row-level security. Serves UC-01 to UC-09.")
@@ -59,7 +61,7 @@ Rel(project_lead, web, "Uses", "HTTPS; UC-07, UC-08")
 Rel(continuum_admin, web, "Uses", "HTTPS; UC-07, UC-08")
 
 Rel(web, api, "Sends requests; receives answers, tables and section PCI series", "JSON over HTTPS; UC-01 to UC-09")
-Rel(api, llm, "Sends the question and retrieved PCI rows; receives the answer text", "HTTPS; UC-01 to UC-04")
+Rel(api, llm, "Asks for a query plan, a plan check, and the answer text from the retrieved PCI rows", "HTTPS; UC-01 to UC-04")
 Rel(api, db, "Reads and writes PCI records, projects, permissions and change history", "SQL; UC-01 to UC-09")
 Rel(api, files, "Stores and reads original uploaded files", "UC-05, UC-09")
 Rel(api, pms, "Automatic connection for the funding agency: PCI records", "Method pending; UC-05", $tags="pending")
