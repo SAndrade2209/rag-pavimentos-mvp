@@ -10,7 +10,6 @@ title rag-pavimentos-mvp: C2 Container diagram
 ' All candidates run on any cloud provider or on premises (portability, CLAUDE.md).
 
 AddElementTag("pending", $borderStyle=DashedLine(), $legendText="Decision pending (ADR)")
-AddElementTag("assumption", $borderStyle=DottedLine(), $legendText="[assumption]")
 AddRelTag("pending", $lineStyle=DashedLine(), $legendText="Method pending (ADR)")
 
 ' People from C1, with the use cases each one performs.
@@ -35,21 +34,23 @@ System_Ext(pms, "Client pavement management system", "Existing client database w
 System_Boundary(platform, "Pavement data platform MVP") {
   Container(web, "Web application", "Candidates: React or Vue (TypeScript)", "Runs in the browser. Project list and workspace, question box, project overview and section view, data loading, access management. Serves UC-01 to UC-09.")
 
-  Container(api, "API application", "Candidates: Python with FastAPI or TypeScript with NestJS", "Modular monolith. Checks per-project permissions, answers questions with source rows through validated query plans, loads and validates PCI data, keeps the change history. Serves UC-01 to UC-09.")
+  Container(api, "API application", "Candidates: Python with FastAPI or TypeScript with NestJS", "Modular monolith. Checks per-project permissions, answers questions with source rows through judged query plans and answer templates, loads and validates PCI data, keeps the change history. Serves UC-01 to UC-09.")
 
-  ' Hosted or self-hosted is the decision. With a hosted model API, client PCI rows leave
-  ' the platform and the model becomes an external system in C1.
-  ' Grounding (ADR 2026-11-23-ground-answers-with-validated-query-plans): the model has no access to
-  ' the database. It returns query plans, which the API validates and runs, and it sees only the result rows.
-  Container(llm, "Language model", "Candidates: hosted model API or self-hosted open-weight model", "Turns questions into query plans, checks plans against questions (judge), and writes answer text from the rows the API retrieves. No access to the database. Serves UC-01 to UC-04.", $tags="pending")
+  ' Hosted or self-hosted is the decision. With a hosted model API, client data (questions, plans,
+  ' and the template answer text with its figures) leave the platform and the model becomes an
+  ' external system in C1.
+  ' Grounding (ADR 2026-11-23-ground-answers-with-judged-plans-and-answer-templates): the model has no
+  ' access to the database and never receives result rows. It returns query plans, judges them, and
+  ' rewords the answer text the API writes from templates.
+  Container(llm, "Language model", "Candidates: hosted model API or self-hosted open-weight model", "Turns questions into query plans, checks each plan against the question (judge), and rewords the answer text the API writes from templates. Receives no result rows and has no access to the database. Serves UC-01 to UC-04.", $tags="pending")
 
   ' Client data isolation: see ADR 2026-11-23-isolate-client-data-with-row-level-security.
-  ' Data layers: see ADR 2026-11-23-backend-modular-monolith-with-data-layers.
-  ContainerDb(db, "Platform database", "Candidates: PostgreSQL with PostGIS or Microsoft SQL Server", "Three data layers as schemas: bronze (loads as received), silver (validated PCI per network section and survey year, with versions), gold (serving tables). Also projects, users, permissions, load jobs and audit log. Client data isolated: shared tables with row-level security. Serves UC-01 to UC-09.")
+  ' Data layers and retention: see ADR 2026-11-23-backend-modular-monolith-with-data-layers-and-retention.
+  ContainerDb(db, "Platform database", "Candidates: PostgreSQL with PostGIS or Microsoft SQL Server", "Three data layers as schemas: bronze (loads as received), silver (validated PCI per network section and survey year, with versions), gold (serving tables, rebuilt with each load or correction). Also projects, users, permissions, load jobs and audit log; answer log entries are kept for a retention period. Client data isolated: shared tables with row-level security. Serves UC-01 to UC-09.")
 
-  ' Not required by phase 1 questions. Justified by the evidence requirement and by PDFs later.
-  ' If original files are not kept, this container is removed.
-  ContainerDb(files, "File storage", "Candidates: S3-compatible object storage or network file volume", "Keeps the original uploaded files as evidence of each load. Later holds PDFs. Serves UC-05 and UC-09.", $tags="assumption")
+  ' Not required by phase 1 questions. Original files are kept for a retention period as evidence
+  ' of each load. PDFs come later and will be stored here.
+  ContainerDb(files, "File storage", "Candidates: S3-compatible object storage or network file volume", "Keeps the original uploaded files as evidence of each load, for a retention period. Later holds PDFs. Serves UC-05 and UC-09.")
 }
 
 Rel(airport_staff, web, "Uses", "HTTPS; UC-01 to UC-07, UC-09")
@@ -62,9 +63,9 @@ Rel(project_lead, web, "Uses", "HTTPS; UC-07, UC-08")
 Rel(continuum_admin, web, "Uses", "HTTPS; UC-07, UC-08")
 
 Rel(web, api, "Sends requests; receives answers, tables and section PCI series", "JSON over HTTPS; UC-01 to UC-09")
-Rel(api, llm, "Asks for a query plan, a plan check, and the answer text from the retrieved PCI rows", "HTTPS; UC-01 to UC-04")
+Rel(api, llm, "Asks for query plans, a judge's verdict on each plan, and a reword of the template answer text", "HTTPS; UC-01 to UC-04")
 Rel(api, db, "Reads and writes PCI records, projects, permissions and change history", "SQL; UC-01 to UC-09")
-Rel(api, files, "Stores and reads original uploaded files", "UC-05, UC-09")
+Rel(api, files, "Stores and reads original uploaded files; deletes them after the retention period", "UC-05, UC-09")
 Rel(api, pms, "Automatic connection for the funding agency: PCI records", "Method pending; UC-05", $tags="pending")
 Rel(web, idp, "Sends users to sign in; receives a signed sign-in token", "OpenID Connect; UC-07")
 Rel(api, idp, "Checks that sign-in tokens are valid", "OpenID Connect; UC-07")

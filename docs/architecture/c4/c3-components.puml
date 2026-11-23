@@ -2,7 +2,7 @@
 '   1. requests and access
 '   2. loading and data layers
 '   3. question answering
-' Structure decided in ADR 2026-11-23-backend-modular-monolith-with-data-layers.
+' Structure decided in ADR 2026-11-23-backend-modular-monolith-with-data-layers-and-retention.
 ' Elements that appear in more than one view carry their full description in one view only.
 
 @startuml c3-1-requests-and-access
@@ -40,7 +40,7 @@ Container_Boundary(api, "API application (modular monolith)") {
     Component(planner, "Query planner", "", "Entry point for questions. Detail in view 3.")
   }
   Boundary(m_audit, "Audit module") {
-    Component(audit, "Audit log", "", "Every module writes here: changes, access decisions, load summaries, and every answer step (question, plan, query, results, judge verdict, number check).")
+    Component(audit, "Audit log", "", "Every module writes here: PCI data changes, project access grants and removals, denied requests, load summaries, and the answer log (question, plans, judge verdicts, query, results, template and reworded text, check result). Answer log entries are deleted when their retention period ends.")
   }
 }
 
@@ -58,7 +58,7 @@ Rel(guard, views, "Checked view requests", "UC-06")
 Rel(guard, jobs, "Checked load requests", "UC-05")
 Rel(guard, corrections, "Checked correction requests", "UC-09")
 Rel(guard, planner, "Checked questions", "UC-01 to UC-04")
-Rel(guard, audit, "Access decisions")
+Rel(guard, audit, "Denied requests")
 Rel(access_mgmt, platform_tables, "Writes project access and permissions", "UC-08")
 Rel(access_mgmt, audit, "Grants and removals")
 Rel(projects, platform_tables, "Reads projects")
@@ -73,13 +73,13 @@ SHOW_LEGEND()
 
 title rag-pavimentos-mvp: C3 API application, view 2 of 3: loading and data layers
 
-' How PCI data move from sources to bronze, silver and gold (UC-05, UC-09).
+' How PCI data move from sources to bronze, silver and gold (UC-05, UC-09), and how
+' original files and answer log entries are deleted after their retention periods.
 
-AddElementTag("assumption", $borderStyle=DottedLine(), $legendText="[assumption]")
 AddRelTag("pending", $lineStyle=DashedLine(), $legendText="Method pending (ADR)")
 
 System_Ext(pms, "Client pavement management system", "Funding agency only. Source of the automatic connection.")
-ContainerDb(files, "File storage", "", "Original uploaded files.", $tags="assumption")
+ContainerDb(files, "File storage", "", "Original uploaded files, kept for a retention period.")
 
 Container_Boundary(api, "API application (modular monolith)") {
   Boundary(m_access, "Access module") {
@@ -89,13 +89,14 @@ Container_Boundary(api, "API application (modular monolith)") {
     Component(jobs, "Load jobs", "", "Runs uploads and agency connection runs as retryable background jobs in the same process, tracked in a job table. Running a load again does not duplicate rows. UC-05.")
     Component(adapters, "Input adapters", "CSV, Excel, agency connection", "Read each source into rows for bronze, using the column mapping saved per client. UC-05.")
     Component(validation, "Validation and load summary", "", "Moves rows from bronze to silver with the UC-05 checks. Lists rows added, conflicts (existing and new value) and rejected rows with the reason. UC-05.")
+    Component(retention, "Retention job", "", "Scheduled job in the same process. Deletes original files when their retention period ends and asks the audit module to delete expired answer log entries.")
   }
   Boundary(m_pci, "PCI data module") {
     Component(corrections, "Corrections", "", "Corrects or deletes PCI values as new versions with who, when and why. Resolves load conflicts. UC-09.")
-    Component(gold_refresh, "Gold refresh", "", "Rebuilds the gold serving tables from silver after each load or correction.")
+    Component(gold_refresh, "Gold refresh", "", "Rebuilds the client's gold tables from silver in the same database transaction as each load or correction.")
   }
   Boundary(m_audit, "Audit module") {
-    Component(audit, "Audit log", "", "Receives load summaries and changes. Detail in view 1.")
+    Component(audit, "Audit log", "", "Receives load summaries and changes. Deletes expired answer log entries when the retention job asks. Detail in view 1.")
   }
 }
 
@@ -121,6 +122,8 @@ Rel(corrections, gold_refresh, "Triggers refresh")
 Rel(corrections, audit, "Changes with who, when and why")
 Rel(gold_refresh, silver, "Reads current versions")
 Rel(gold_refresh, gold, "Rebuilds serving tables")
+Rel(retention, files, "Deletes files after their retention period")
+Rel(retention, audit, "Asks to delete expired answer log entries")
 
 SHOW_LEGEND()
 @enduml
@@ -130,7 +133,7 @@ SHOW_LEGEND()
 
 title rag-pavimentos-mvp: C3 API application, view 3 of 3: question answering
 
-' Grounded answers (ADR 2026-11-23-ground-answers-with-validated-query-plans), UC-01 to UC-04.
+' Grounded answers (ADR 2026-11-23-ground-answers-with-judged-plans-and-answer-templates), UC-01 to UC-04.
 
 LAYOUT_LEFT_RIGHT()
 AddElementTag("pending", $borderStyle=DashedLine(), $legendText="Decision pending (ADR)")
@@ -142,14 +145,14 @@ Container_Boundary(api, "API application (modular monolith)") {
     Component(guard, "Access guard", "", "Checks every request and supplies client, project and permissions. Detail in view 1.")
   }
   Boundary(m_qa, "Question answering module") {
-    Component(planner, "Query planner", "", "Asks the model for a query plan built from filters and operations, and validates it. UC-01 to UC-04.")
+    Component(planner, "Query planner", "", "Asks the model for a query plan built from filters and operations, and validates it. If the judge rejects the plan, asks for a new one with the judge's reason, up to three plans; after that, the question cannot be answered yet. UC-01 to UC-04.")
+    Component(judge, "Judge", "", "Asks the model whether the plan answers the question, before the query runs. Sends the question and the plan, never result rows.")
     Component(query_builder, "Query builder", "", "Turns the plan into a parameterized query on gold, with client, project and permissions from the access guard. Read-only.")
-    Component(answer_writer, "Answer writer", "", "Asks the model for the answer text from the query results.")
-    Component(answer_checks, "Answer checks", "", "Judge: asks the model whether the plan answers the question. Number check: every number in the text comes from the results.")
+    Component(answer_writer, "Answer writer", "", "Writes the answer text from the query results with the template for the plan's operation. Asks the model to reword it, and keeps the reword only if its numbers, survey years and section identifiers match the template text, in the same order.")
     Component(llm_port, "Language model interface", "", "The only way to reach the model. One adapter per model option.")
   }
   Boundary(m_audit, "Audit module") {
-    Component(audit, "Audit log", "", "Receives every answer step. Detail in view 1.")
+    Component(audit, "Audit log", "", "Receives the answer log. Detail in view 1.")
   }
 }
 
@@ -158,14 +161,15 @@ Container_Boundary(db, "Platform database (row-level security on every schema)")
 }
 
 Rel(guard, planner, "Checked questions", "UC-01 to UC-04")
-Rel(planner, query_builder, "Validated plan")
+Rel(planner, judge, "Asks for a verdict on each validated plan")
+Rel(planner, query_builder, "Plan accepted by the judge")
 Rel(query_builder, gold, "Parameterized read-only queries", "UC-01 to UC-04")
-Rel(query_builder, answer_writer, "Query results")
-Rel(answer_writer, answer_checks, "Text, plan and results")
-Rel(answer_checks, audit, "Answer steps")
+Rel(query_builder, answer_writer, "Query and results")
+Rel(planner, audit, "Question, plans and verdicts")
+Rel(answer_writer, audit, "Query, results, texts and check result")
 Rel(planner, llm_port, "Asks for a query plan")
-Rel(answer_writer, llm_port, "Asks for the answer text")
-Rel(answer_checks, llm_port, "Asks the judge")
+Rel(judge, llm_port, "Asks for a verdict")
+Rel(answer_writer, llm_port, "Asks for a reword of the template text")
 Rel(llm_port, llm, "Calls the model through its adapter", "HTTPS")
 
 SHOW_LEGEND()

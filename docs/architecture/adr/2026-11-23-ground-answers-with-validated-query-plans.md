@@ -1,7 +1,7 @@
 # Ground answers in PCI data through validated query plans
 
 - Date: 2026-11-23
-- Status: Accepted
+- Status: Superseded by [ADR 2026-11-23-ground-answers-with-judged-plans-and-answer-templates](2026-11-23-ground-answers-with-judged-plans-and-answer-templates.md)
 
 ## Context
 

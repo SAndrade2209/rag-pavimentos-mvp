@@ -1,7 +1,7 @@
 # Structure the backend as a modular monolith with bronze, silver and gold data layers
 
 - Date: 2026-11-23
-- Status: Accepted
+- Status: Superseded by [ADR 2026-11-23-backend-modular-monolith-with-data-layers-and-retention](2026-11-23-backend-modular-monolith-with-data-layers-and-retention.md)
 
 ## Context
 
