@@ -4,6 +4,11 @@
 title rag-pavimentos-mvp: C1 System context diagram
 
 ' Actors and the use cases each one performs (docs/use-cases/).
+' Every person signs in (UC-07). Load, correct and delete, and manage access
+' depend on per-project permissions granted in UC-08.
+' UC-06 actors are an [assumption] (see uc-06-view-pci-in-project.md).
+' UC-09 is shown for users who load data [assumption]; any user can receive
+' the Correct and delete permission.
 Person(airport_staff, "Airport pavement management staff", "Loads airfield PCI data, selects M&R candidates, reports condition and plans inspections.")
 Person(pm_engineer, "Pavement management engineer", "Loads PCI data, selects M&R candidates and reports network condition.")
 Person(district_staff, "District/maintenance staff", "Selects M&R candidates and plans inspections on assigned sections.")
@@ -12,18 +17,29 @@ Person(consultant, "Continuum consultant", "Secondary user. Loads client PCI dat
 ' Separate client role confirmed. The role name is a placeholder.
 Person(data_admin, "Client data administrator", "Separate client role that loads the client's PCI data files.")
 
-System(rag, "RAG pavement MVP", "Answers natural-language questions about tabular PCI data (section, coordinates, PCI, year) with source rows and downloadable tables.")
+' Access management roles. The scope of each is an [assumption] (see uc-08-manage-project-access.md).
+Person(client_manager, "Client manager", "Manager at the agency or airport. Grants and removes access to the client's projects.")
+Person(project_lead, "Project lead", "Person responsible for a project. Grants and removes access to that project.")
+Person(continuum_admin, "Continuum administrator", "Continuum staff. Sets up each client and its first client manager, and can grant project access.")
+
+System(platform, "Pavement data platform MVP", "Stores PCI data (section, coordinates, PCI, year) for each client's airport or road networks across all survey years. Answers natural-language questions with source rows and tables, and shows PCI in project and section views. Access is granted per project.")
 
 ' External system. PCI data reach the MVP in two ways: file upload (CSV) or export from this system.
+' Sign-in method not decided (UC-07): an identity provider is not shown until it is.
 System_Ext(pms, "Client pavement management system", "Existing client database with PCI records per section and survey year, with coordinates. Airport or road network.")
 
-Rel(airport_staff, rag, "Uploads PCI data files; asks questions; receives answers, source rows and tables", "UC-01 to UC-05")
-Rel(pm_engineer, rag, "Uploads PCI data files; asks questions; receives answers, source rows and tables", "UC-01, UC-02, UC-03, UC-05")
-Rel(district_staff, rag, "Asks questions; receives answers, source rows and tables", "UC-01, UC-04")
-Rel(consultant, rag, "Uploads PCI data files; asks questions; receives answers, source rows and tables", "UC-01, UC-02, UC-05")
+Rel(airport_staff, platform, "Signs in; uploads and corrects PCI data; asks questions; views project and section PCI", "UC-01 to UC-07, UC-09")
+Rel(pm_engineer, platform, "Signs in; uploads and corrects PCI data; asks questions; views project and section PCI", "UC-01, UC-02, UC-03, UC-05, UC-06, UC-07, UC-09")
+Rel(district_staff, platform, "Signs in; asks questions; views project and section PCI", "UC-01, UC-04, UC-06, UC-07")
+Rel(consultant, platform, "Signs in; uploads and corrects PCI data; asks questions; views project and section PCI", "UC-01, UC-02, UC-05, UC-06, UC-07, UC-09")
 
-Rel(data_admin, rag, "Uploads PCI data files (section, coordinates, PCI, year)", "UC-05")
-Rel(pms, rag, "Provides PCI records as exports (section, coordinates, PCI, year)", "UC-05")
+Rel(data_admin, platform, "Signs in; uploads and corrects PCI data files (section, coordinates, PCI, year)", "UC-05, UC-07, UC-09")
+
+Rel(client_manager, platform, "Signs in; grants and removes access to the client's projects", "UC-07, UC-08")
+Rel(project_lead, platform, "Signs in; grants and removes access to their project", "UC-07, UC-08")
+Rel(continuum_admin, platform, "Sets up clients and their first manager; grants and removes project access", "UC-07, UC-08")
+
+Rel(pms, platform, "Provides PCI records as exports (section, coordinates, PCI, year)", "UC-05")
 
 SHOW_LEGEND()
 @enduml

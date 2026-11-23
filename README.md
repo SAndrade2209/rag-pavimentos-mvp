@@ -2,7 +2,7 @@
 
 ## Objective
 
-MVP of a RAG (retrieval-augmented generation) application that answers natural-language questions about tabular pavement data. The data include the fields:
+MVP of a pavement data platform. Users ask natural-language questions about tabular pavement data, answered with retrieval-augmented generation (RAG), and view the data in project and section views. The data include the fields:
 
 - Section
 - Coordinates
@@ -13,15 +13,20 @@ MVP of a RAG (retrieval-augmented generation) application that answers natural-l
 
 ### In the MVP
 
-- Question answering over the tabular pavement data (section, coordinates, PCI, year).
+- Question answering over the tabular pavement data (section, coordinates, PCI, year). Answers are text and tables, without charts.
 - Project display as in the demo: project list and project workspace.
-- [assumption] PCI data are kept per project.
+- Project data overview: current PCI by section.
+- Section view: PCI by survey year, with years without a survey marked as gaps, and the survey timeline.
+- PCI data belong to the airport or road network, not to the project. A project is how data arrive and where they are shown. Every survey year is kept for future analysis, evidence and later surveys.
+- Other dashboards: not confirmed.
+- Sign-in, access by project, and access management. Loading, correcting, deleting and granting access depend on the user's permissions on each project.
+- Corrections and deletions keep the old values, with who, when and why.
 
 ### Out of the MVP
 
 - PDF documents and PDF extraction.
 - Public pavement data sources.
-- Map and network view.
+- Network map. Sections are reached from a project, not from the map.
 - Specifications.
 - Workbench (mix design, material characterization, pavement life prediction and construction acceptance tools).
 

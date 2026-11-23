@@ -2,13 +2,21 @@
 
 ## Context
 - Proposal for a government agency that may fund development.
-- MVP goal: answer natural-language questions about tabular pavement data
-  (section, coordinates, PCI, year).
+- MVP goal: a pavement data platform. Answer natural-language questions
+  about tabular pavement data (section, coordinates, PCI, year) and show
+  the data in project and section views.
 - Out of MVP scope: PDFs, map, specifications, network view, public data
   sources, workbench. PDFs and other file types come later, so ingestion
   must be extensible.
 - The project display from the demo (project list and project workspace)
   stays in the MVP.
+- PCI data belong to the network and are kept for every survey year. A
+  project is how data arrive and where they are shown.
+- Answers to questions have no charts. Charts appear only in the section
+  view.
+- Access is granted per project. Loading, correcting, deleting and granting
+  access depend on the user's permissions. Corrected or deleted PCI data are
+  kept with who, when and why.
 
 ## Design constraints
 - Priority: an MVP that deploys fast. Prefer a modular monolith over
