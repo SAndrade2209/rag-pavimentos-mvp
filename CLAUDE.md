@@ -25,6 +25,7 @@
   Response times must be reasonable.
 - Must be portable across cloud providers and support multiple clients
   with isolated data.
+- Data, backups and language model processing stay in the US (MVP).
 - Quality attributes: see docs/architecture/quality-attributes.md.
   Do not optimize attributes outside that list.
 
