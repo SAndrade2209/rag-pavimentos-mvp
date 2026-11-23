@@ -3,4 +3,63 @@
 
 title rag-pavimentos-mvp: C2 Container diagram
 
+' Proposal. Candidate technologies are listed, not chosen. Each choice goes in an ADR,
+' after docs/architecture/quality-attributes.md is filled.
+' Modular monolith (CLAUDE.md): one API application holds the modules
+' (question answering, PCI data, projects and access, change history). Modules belong in C3.
+' All candidates run on any cloud provider or on premises (portability, CLAUDE.md).
+
+AddElementTag("pending", $borderStyle=DashedLine(), $legendText="Decision pending (ADR)")
+AddElementTag("assumption", $borderStyle=DottedLine(), $legendText="[assumption]")
+AddRelTag("pending", $lineStyle=DashedLine(), $legendText="Only if chosen (ADR)")
+
+' People from C1, with the use cases each one performs.
+Person(airport_staff, "Airport pavement management staff")
+Person(pm_engineer, "Pavement management engineer")
+Person(district_staff, "District/maintenance staff")
+Person(consultant, "Continuum consultant")
+Person(data_admin, "Client data administrator")
+Person(client_manager, "Client manager")
+Person(project_lead, "Project lead")
+Person(continuum_admin, "Continuum administrator")
+
+' External system from C1.
+' Export files from this system are uploaded by people through the web application (UC-05).
+' A direct connection is the other option; it is drawn as a pending relationship.
+' Sign-in method not decided (UC-07): an identity provider is not shown until it is.
+System_Ext(pms, "Client pavement management system", "Existing client database with PCI records per section and survey year, with coordinates.")
+
+System_Boundary(platform, "Pavement data platform MVP") {
+  Container(web, "Web application", "Candidates: React or Vue (TypeScript)", "Runs in the browser. Project list and workspace, question box, project overview and section view, data loading, access management. Serves UC-01 to UC-09.")
+
+  Container(api, "API application", "Candidates: Python with FastAPI or TypeScript with NestJS", "Modular monolith. Checks per-project permissions, answers questions with source rows, loads and validates PCI data, keeps the change history. Serves UC-01 to UC-09.")
+
+  ' Hosted or self-hosted is the decision. With a hosted model API, client PCI rows leave
+  ' the platform and the model becomes an external system in C1.
+  Container(llm, "Language model", "Candidates: hosted model API or self-hosted open-weight model", "Interprets natural-language questions and drafts the answer text from the PCI rows the API retrieves. Serves UC-01 to UC-04.", $tags="pending")
+
+  ' Client data isolation approach to be decided in an ADR.
+  ContainerDb(db, "Platform database", "Candidates: PostgreSQL with PostGIS or Microsoft SQL Server", "PCI records per network section and survey year, with corrected and deleted values kept; projects, users, permissions and change history. Client data isolated. Serves UC-01 to UC-09.")
+
+  ' Not required by phase 1 questions. Justified by the evidence requirement and by PDFs later.
+  ' If original files are not kept, this container is removed.
+  ContainerDb(files, "File storage", "Candidates: S3-compatible object storage or network file volume", "Keeps the original uploaded files as evidence of each load. Later holds PDFs. Serves UC-05 and UC-09.", $tags="assumption")
+}
+
+Rel(airport_staff, web, "Uses", "HTTPS; UC-01 to UC-07, UC-09")
+Rel(pm_engineer, web, "Uses", "HTTPS; UC-01, UC-02, UC-03, UC-05, UC-06, UC-07, UC-09")
+Rel(district_staff, web, "Uses", "HTTPS; UC-01, UC-04, UC-06, UC-07")
+Rel(consultant, web, "Uses", "HTTPS; UC-01, UC-02, UC-05, UC-06, UC-07, UC-09")
+Rel(data_admin, web, "Uses", "HTTPS; UC-05, UC-07, UC-09")
+Rel(client_manager, web, "Uses", "HTTPS; UC-07, UC-08")
+Rel(project_lead, web, "Uses", "HTTPS; UC-07, UC-08")
+Rel(continuum_admin, web, "Uses", "HTTPS; UC-07, UC-08")
+
+Rel(web, api, "Sends requests; receives answers, tables and section PCI series", "JSON over HTTPS; UC-01 to UC-09")
+Rel(api, llm, "Sends the question and retrieved PCI rows; receives the answer text", "HTTPS; UC-01 to UC-04")
+Rel(api, db, "Reads and writes PCI records, projects, permissions and change history", "SQL; UC-01 to UC-09")
+Rel(api, files, "Stores and reads original uploaded files", "UC-05, UC-09")
+Rel(api, pms, "Reads PCI records", "Direct connection, only if chosen; UC-05", $tags="pending")
+
+SHOW_LEGEND()
 @enduml
