@@ -38,8 +38,8 @@ System_Boundary(platform, "Pavement data platform MVP") {
   ' the platform and the model becomes an external system in C1.
   Container(llm, "Language model", "Candidates: hosted model API or self-hosted open-weight model", "Interprets natural-language questions and drafts the answer text from the PCI rows the API retrieves. Serves UC-01 to UC-04.", $tags="pending")
 
-  ' Client data isolation approach to be decided in an ADR.
-  ContainerDb(db, "Platform database", "Candidates: PostgreSQL with PostGIS or Microsoft SQL Server", "PCI records per network section and survey year, with corrected and deleted values kept; projects, users, permissions and change history. Client data isolated. Serves UC-01 to UC-09.")
+  ' Client data isolation: see ADR 2026-11-23-isolate-client-data-with-row-level-security.
+  ContainerDb(db, "Platform database", "Candidates: PostgreSQL with PostGIS or Microsoft SQL Server", "PCI records per network section and survey year, with corrected and deleted values kept; projects, users, permissions and change history. Client data isolated: shared tables with row-level security. Serves UC-01 to UC-09.")
 
   ' Not required by phase 1 questions. Justified by the evidence requirement and by PDFs later.
   ' If original files are not kept, this container is removed.
