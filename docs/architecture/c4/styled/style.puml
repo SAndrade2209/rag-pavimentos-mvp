@@ -1,0 +1,84 @@
+' Shared look for the styled copies in this folder.
+' The originals in docs/architecture/c4/ are the source of truth. The copies show the same
+' elements and relationships with shorter text, colors, icons and numbered steps, for reading
+' and presenting. When an original changes, update its copy.
+' Include after the C4-PlantUML library: !include style.puml
+
+' Icons: Font Awesome 5, bundled with PlantUML.
+!include <tupadr3/font-awesome-5/archive>
+!include <tupadr3/font-awesome-5/brain>
+!include <tupadr3/font-awesome-5/building>
+!include <tupadr3/font-awesome-5/chart_line>
+!include <tupadr3/font-awesome-5/clipboard_check>
+!include <tupadr3/font-awesome-5/clipboard_list>
+!include <tupadr3/font-awesome-5/database>
+!include <tupadr3/font-awesome-5/desktop>
+!include <tupadr3/font-awesome-5/edit>
+!include <tupadr3/font-awesome-5/file_alt>
+!include <tupadr3/font-awesome-5/file_import>
+!include <tupadr3/font-awesome-5/filter>
+!include <tupadr3/font-awesome-5/folder_open>
+!include <tupadr3/font-awesome-5/gavel>
+!include <tupadr3/font-awesome-5/google>
+!include <tupadr3/font-awesome-5/key>
+!include <tupadr3/font-awesome-5/plug>
+!include <tupadr3/font-awesome-5/road>
+!include <tupadr3/font-awesome-5/server>
+!include <tupadr3/font-awesome-5/shield_alt>
+!include <tupadr3/font-awesome-5/sitemap>
+!include <tupadr3/font-awesome-5/sync_alt>
+!include <tupadr3/font-awesome-5/table>
+!include <tupadr3/font-awesome-5/tasks>
+!include <tupadr3/font-awesome-5/trash_alt>
+!include <tupadr3/font-awesome-5/user_lock>
+
+' Text, lines and spacing.
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 70
+skinparam ranksep 90
+skinparam ArrowColor #64748B
+skinparam ArrowThickness 1.4
+skinparam ArrowFontColor #334155
+skinparam ArrowFontSize 12
+skinparam TitleFontSize 20
+skinparam TitleFontColor #0F172A
+skinparam CaptionFontSize 13
+skinparam CaptionFontColor #475569
+HIDE_STEREOTYPE()
+SetDefaultLegendEntries("")
+UpdateBoundaryStyle($elementName="boundary", $bgColor="#FFFFFF", $fontColor="#475569", $borderColor="#CBD5E1")
+
+' People, grouped by what they do on the platform.
+AddElementTag("data_user", $bgColor="#0F766E", $fontColor="#FFFFFF", $borderColor="#115E59", $shape=RoundedBoxShape(), $legendText="Uses PCI data")
+AddElementTag("access_manager", $bgColor="#4338CA", $fontColor="#FFFFFF", $borderColor="#3730A3", $shape=RoundedBoxShape(), $legendText="Manages project access")
+
+' Systems and containers.
+AddElementTag("platform", $bgColor="#1E40AF", $fontColor="#FFFFFF", $borderColor="#1E3A8A", $shape=RoundedBoxShape(), $legendText="Pavement data platform MVP")
+AddElementTag("external", $bgColor="#F8FAFC", $fontColor="#334155", $borderColor="#94A3B8", $shape=RoundedBoxShape(), $legendText="External system")
+AddElementTag("web", $bgColor="#ECFDF5", $fontColor="#064E3B", $borderColor="#059669", $shape=RoundedBoxShape(), $legendText="Web application")
+AddElementTag("api", $bgColor="#DBEAFE", $fontColor="#0F172A", $borderColor="#2563EB", $shape=RoundedBoxShape(), $legendText="API application")
+AddElementTag("model", $bgColor="#EDE9FE", $fontColor="#2E1065", $borderColor="#7C3AED", $borderStyle=DashedLine(), $shape=RoundedBoxShape(), $legendText="Language model: hosted or self-hosted, decision pending")
+AddElementTag("db", $bgColor="#E0F2FE", $fontColor="#0C4A6E", $borderColor="#0369A1", $legendText="Platform database")
+AddElementTag("files", $bgColor="#F5F5F4", $fontColor="#292524", $borderColor="#78716C", $legendText="File storage")
+
+' Modules of the API application (C3).
+AddElementTag("access", $bgColor="#E0E7FF", $fontColor="#1E1B4B", $borderColor="#4F46E5", $shape=RoundedBoxShape(), $legendText="Access module")
+AddElementTag("projects", $bgColor="#CFFAFE", $fontColor="#164E63", $borderColor="#0891B2", $shape=RoundedBoxShape(), $legendText="Projects module")
+AddElementTag("views", $bgColor="#CCFBF1", $fontColor="#134E4A", $borderColor="#0D9488", $shape=RoundedBoxShape(), $legendText="Views module")
+AddElementTag("loading", $bgColor="#ECFCCB", $fontColor="#1A2E05", $borderColor="#65A30D", $shape=RoundedBoxShape(), $legendText="Loading module")
+AddElementTag("pci", $bgColor="#FCE7F3", $fontColor="#500724", $borderColor="#DB2777", $shape=RoundedBoxShape(), $legendText="PCI data module")
+AddElementTag("qa", $bgColor="#DBEAFE", $fontColor="#0F172A", $borderColor="#2563EB", $shape=RoundedBoxShape(), $legendText="Question answering module")
+AddElementTag("audit", $bgColor="#F1F5F9", $fontColor="#0F172A", $borderColor="#475569", $shape=RoundedBoxShape(), $legendText="Audit module")
+
+' Database contents (C3). The data layers use their metal colors.
+AddElementTag("tables", $bgColor="#E0F2FE", $fontColor="#0C4A6E", $borderColor="#0369A1", $legendText="Platform tables")
+AddElementTag("bronze", $bgColor="#F5E1D3", $fontColor="#431407", $borderColor="#9A3412", $legendText="Bronze: loads as received")
+AddElementTag("silver", $bgColor="#E5E7EB", $fontColor="#111827", $borderColor="#4B5563", $legendText="Silver: validated PCI with versions")
+AddElementTag("gold", $bgColor="#FEF3C7", $fontColor="#451A03", $borderColor="#B45309", $legendText="Gold: serving tables")
+
+' Relationship styles.
+AddRelTag("pending", $lineStyle=DashedLine(), $legendText="Method pending (ADR)")
+AddRelTag("correction", $textColor="#BE185D", $lineColor="#DB2777", $legendText="Correction (UC-09)")
+AddRelTag("retention", $textColor="#57534E", $lineColor="#A8A29E", $lineStyle=DottedLine(), $legendText="Retention job (scheduled)")

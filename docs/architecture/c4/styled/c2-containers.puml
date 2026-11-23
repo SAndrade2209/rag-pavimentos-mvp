@@ -1,0 +1,49 @@
+' Styled copy of ../c2-containers.puml for reading and presenting.
+' The original is the source of truth. When it changes, update this copy.
+
+@startuml c2-containers
+!include <C4/C4_Container>
+!include style.puml
+
+title Pavement data platform MVP: containers (C2)
+caption Candidate technologies are listed, not chosen. Use cases are listed under each person.
+
+Person(airport_staff, "Airport pavement management staff", "UC-01 to UC-07, UC-09", $tags="data_user")
+Person(pm_engineer, "Pavement management engineer", "UC-01 to UC-03, UC-05 to UC-07, UC-09", $tags="data_user")
+Person(district_staff, "District/maintenance staff", "UC-01, UC-04, UC-06, UC-07", $tags="data_user")
+Person(consultant, "Continuum consultant", "UC-01, UC-02, UC-05 to UC-07, UC-09", $tags="data_user")
+Person(data_admin, "Client data administrator", "UC-05, UC-07, UC-09", $tags="data_user")
+Person(client_manager, "Client manager", "UC-07, UC-08", $tags="access_manager")
+Person(project_lead, "Project lead", "UC-07, UC-08", $tags="access_manager")
+Person(continuum_admin, "Continuum administrator", "UC-07, UC-08", $tags="access_manager")
+
+Boundary(platform, "Pavement data platform MVP") {
+  Container(web, "Web application", "React or Vue (TypeScript)", "Project list and workspace, question box, project and section views, data loading, access management", $sprite="desktop", $tags="web")
+  Container(api, "API application", "Python with FastAPI or TypeScript with NestJS", "Modular monolith: checks permissions, answers questions, loads PCI data, keeps the change history", $sprite="server", $tags="api")
+  Container(llm, "Language model", "Hosted model API or self-hosted open-weight model", "Builds query plans, judges them, rewords answer text. No database access; never receives result rows.", $sprite="brain", $tags="model")
+  ContainerDb(db, "Platform database", "PostgreSQL with PostGIS or Microsoft SQL Server", "Bronze, silver and gold layers; projects, users, permissions, audit log. Row-level security by client.", $sprite="database", $tags="db")
+  ContainerDb(files, "File storage", "S3-compatible object storage or network file volume", "Original uploaded files, kept for a retention period. PDFs later.", $sprite="archive", $tags="files")
+}
+
+System_Ext(idp, "Identity service", "Hosted. MFA, single sign-on, Google sign-in for Continuum staff. User data in the US.", $sprite="key", $tags="external")
+System_Ext(pms, "Client pavement management system", "Existing client database of PCI records", $sprite="database", $tags="external")
+
+Rel(airport_staff, web, "Uses")
+Rel(pm_engineer, web, "Uses")
+Rel(district_staff, web, "Uses")
+Rel(consultant, web, "Uses")
+Rel(data_admin, web, "Uses")
+Rel(client_manager, web, "Uses")
+Rel(project_lead, web, "Uses")
+Rel(continuum_admin, web, "Uses")
+
+Rel(web, api, "Requests; answers, tables, PCI series", "JSON over HTTPS")
+Rel(web, idp, "Sends users to sign in", "OpenID Connect")
+Rel(api, idp, "Checks sign-in tokens", "OpenID Connect")
+Rel(api, llm, "Query plans, verdicts, rewording", "HTTPS")
+Rel(api, db, "Reads and writes", "SQL")
+Rel(api, files, "Stores, reads, deletes after retention")
+Rel(api, pms, "Automatic connection for the funding agency", "Method pending", $tags="pending")
+
+SHOW_LEGEND()
+@enduml

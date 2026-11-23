@@ -39,6 +39,7 @@ PDFs and other file types come later. Loading PCI data must allow adding them wi
 | `docs/use-cases/` | The main use cases of the MVP, business-oriented. |
 | `docs/architecture/` | Architecture documentation. `quality-attributes.md` holds the prioritized quality attributes. |
 | `docs/architecture/c4/` | C4 model diagrams as code (PlantUML with the C4-PlantUML library): C1 context, C2 containers and C3 components. |
+| `docs/architecture/c4/styled/` | Styled copies of the C4 diagrams for reading and presenting, with PNG and SVG renders. The diagrams in `docs/architecture/c4/` are the source of truth. |
 | `docs/architecture/adr/` | Architecture decision records (ADRs). `0000-template.md` is the template; each ADR is named `YYYY-MM-DD-short-title.md`. |
 | `docs/estimates/` | MVP estimates (effort, schedule and cost). |
 | `demo/` | Code and material for the MVP demonstration. |

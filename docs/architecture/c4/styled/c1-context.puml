@@ -1,0 +1,42 @@
+' Styled copy of ../c1-context.puml for reading and presenting.
+' The original is the source of truth. When it changes, update this copy.
+
+@startuml c1-context
+!include <C4/C4_Context>
+!include style.puml
+
+title Pavement data platform MVP: system context (C1)
+caption Every person signs in through the identity service (UC-07). Use cases are listed under each person.
+
+Person(airport_staff, "Airport pavement management staff", "Loads airfield PCI data, selects M&R candidates, reports condition, plans inspections\nUC-01 to UC-07, UC-09", $tags="data_user")
+Person(pm_engineer, "Pavement management engineer", "Loads PCI data, selects M&R candidates, reports network condition\nUC-01 to UC-03, UC-05 to UC-07, UC-09", $tags="data_user")
+Person(district_staff, "District/maintenance staff", "Selects M&R candidates, plans inspections on assigned sections\nUC-01, UC-04, UC-06, UC-07", $tags="data_user")
+Person(consultant, "Continuum consultant", "Loads client PCI data, answers client requests\nUC-01, UC-02, UC-05 to UC-07, UC-09", $tags="data_user")
+Person(data_admin, "Client data administrator", "Loads the client's PCI data files\nUC-05, UC-07, UC-09", $tags="data_user")
+Person(client_manager, "Client manager", "Grants and removes access to the client's projects\nUC-07, UC-08", $tags="access_manager")
+Person(project_lead, "Project lead", "Grants and removes access to their project\nUC-07, UC-08", $tags="access_manager")
+Person(continuum_admin, "Continuum administrator", "Sets up each client and its first manager; grants project access\nUC-07, UC-08", $tags="access_manager")
+
+System(platform, "Pavement data platform MVP", "PCI data (section, coordinates, PCI, year) for each client's airport or road networks, every survey year. Answers questions with source rows. Project and section views. Access per project.", $sprite="road", $tags="platform")
+
+System_Ext(pms, "Client pavement management system", "Existing client database of PCI records per section and survey year", $sprite="database", $tags="external")
+System_Ext(idp, "Identity service", "Hosted. Platform accounts with MFA, single sign-on, Google sign-in. User data in the US.", $sprite="key", $tags="external")
+System_Ext(client_idp, "Client identity provider", "The client's own accounts. Only for clients that require single sign-on.", $sprite="building", $tags="external")
+System_Ext(google, "Continuum Google Workspace", "Continuum accounts with two-step verification", $sprite="google", $tags="external")
+
+Rel(airport_staff, platform, "Uses")
+Rel(pm_engineer, platform, "Uses")
+Rel(district_staff, platform, "Uses")
+Rel(consultant, platform, "Uses")
+Rel(data_admin, platform, "Uses")
+Rel(client_manager, platform, "Manages access")
+Rel(project_lead, platform, "Manages access")
+Rel(continuum_admin, platform, "Sets up clients; manages access")
+
+Rel(platform, pms, "Automatic connection for the funding agency: PCI records", "UC-05", $tags="pending")
+Rel(platform, idp, "Delegates sign-in", "OpenID Connect")
+Rel(idp, client_idp, "Single sign-on for client staff")
+Rel(idp, google, "Sign-in for Continuum staff")
+
+SHOW_LEGEND()
+@enduml

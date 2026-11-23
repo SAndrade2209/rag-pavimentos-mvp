@@ -1,0 +1,166 @@
+' Styled copy of ../c3-components.puml for reading and presenting, in the same three views:
+'   1. requests and access
+'   2. loading and data layers
+'   3. question answering
+' The original is the source of truth. When it changes, update this copy.
+
+@startuml c3-1-requests-and-access
+!include <C4/C4_Component>
+!include style.puml
+LAYOUT_LANDSCAPE()
+' Curved lines here: with right-angle lines, Graphviz puts labels on top of boxes.
+skinparam linetype splines
+
+title API application: requests and access (C3, view 1 of 3)
+caption Every request passes the access guard, which denies by default. Labels on its arrows give the use cases each module serves.
+
+Container(web, "Web application", "", "Sends every request", $sprite="desktop", $tags="web")
+System_Ext(idp, "Identity service", "Issues sign-in tokens", $sprite="key", $tags="external")
+
+Boundary(api, "API application") {
+  Boundary(m_access, "Access module") {
+    Component(guard, "Access guard", "", "Checks the sign-in token; loads user, client and permissions; sets the client for row-level security. Denies by default.", $sprite="shield_alt", $tags="access")
+    Component(access_mgmt, "Access management", "", "Grants and removes project access and permissions", $sprite="user_lock", $tags="access")
+  }
+  Boundary(m_projects, "Projects module") {
+    Component(projects, "Projects", "", "Project list and workspace, granted projects only", $sprite="folder_open", $tags="projects")
+  }
+  Boundary(m_views, "Views module") {
+    Component(views, "Project and section views", "", "Latest PCI by section; PCI by survey year and survey timeline", $sprite="chart_line", $tags="views")
+  }
+  Boundary(m_loading, "Loading module") {
+    Component(jobs, "Load jobs", "", "Entry point for loads (view 2)", $sprite="tasks", $tags="loading")
+  }
+  Boundary(m_pci, "PCI data module") {
+    Component(corrections, "Corrections", "", "Entry point for corrections (view 2)", $sprite="edit", $tags="pci")
+  }
+  Boundary(m_qa, "Question answering module") {
+    Component(planner, "Query planner", "", "Entry point for questions (view 3)", $sprite="sitemap", $tags="qa")
+  }
+  Boundary(m_audit, "Audit module") {
+    Component(audit, "Audit log", "", "PCI data changes, access grants and removals, denied requests, load summaries, answer log", $sprite="clipboard_list", $tags="audit")
+  }
+}
+
+Boundary(db, "Platform database: row-level security on every schema") {
+  ComponentDb(platform_tables, "Platform tables", "", "Users, clients, projects, permissions, load jobs, audit log", $sprite="table", $tags="tables")
+  ComponentDb(gold, "Gold schema", "", "Latest PCI per section, PCI by survey year, project overview, network summaries", $sprite="database", $tags="gold")
+}
+
+Rel(web, guard, "Every request", "JSON over HTTPS")
+Rel(guard, idp, "Checks sign-in tokens", "OpenID Connect")
+Rel(guard, platform_tables, "Users, clients, permissions; sets the client")
+Rel(guard, access_mgmt, "UC-08")
+Rel(guard, projects, "UC-06, UC-07")
+Rel(guard, views, "UC-06")
+Rel(guard, jobs, "UC-05")
+Rel(guard, corrections, "UC-09")
+Rel(guard, planner, "UC-01 to UC-04")
+Rel(guard, audit, "Denied requests")
+Rel(access_mgmt, platform_tables, "Writes access and permissions")
+Rel(access_mgmt, audit, "Grants and removals")
+Rel(projects, platform_tables, "Reads projects")
+Rel(views, gold, "Reads")
+Rel(audit, platform_tables, "Writes audit records")
+
+SHOW_LEGEND()
+@enduml
+
+@startuml c3-2-loading-and-data-layers
+!include <C4/C4_Component>
+!include style.puml
+LAYOUT_LANDSCAPE()
+' Curved lines here: with right-angle lines, Graphviz puts labels on top of boxes.
+skinparam linetype splines
+skinparam ranksep 70
+' No module or database boxes in this view: Graphviz stacks grouped schemas and scatters
+' the flow. Colors show the module instead, as the caption says.
+
+title API application: loading and data layers (C3, view 2 of 3)
+caption Numbers give the order of a load, left to right. Colors show each component's module; bronze, silver and gold are schemas of the platform database, all under row-level security.\n Pink arrows show a correction. Dotted arrows show the scheduled retention job.
+
+System_Ext(pms, "Client pavement management system", "Funding agency only", $sprite="database", $tags="external")
+ContainerDb(files, "File storage", "", "Original files, kept for a retention period", $sprite="archive", $tags="files")
+
+Component(guard, "Access guard", "", "Checks every request (view 1)", $sprite="shield_alt", $tags="access")
+Component(jobs, "Load jobs", "", "Background jobs in the same process. Running a load again does not duplicate rows.", $sprite="tasks", $tags="loading")
+Component(adapters, "Input adapters", "CSV, Excel, agency connection", "Read each source with the client's saved column mapping", $sprite="file_import", $tags="loading")
+Component(validation, "Validation and load summary", "", "UC-05 checks. Rows added, conflicts, and rejected rows with the reason.", $sprite="clipboard_check", $tags="loading")
+Component(retention, "Retention job", "", "Scheduled. Deletes expired original files and answer log entries.", $sprite="trash_alt", $tags="loading")
+Component(corrections, "Corrections", "", "New versions with who, when and why. Resolves load conflicts.", $sprite="edit", $tags="pci")
+Component(gold_refresh, "Gold refresh", "", "Rebuilds the client's gold tables in the same transaction as the load or correction", $sprite="sync_alt", $tags="pci")
+Component(audit, "Audit log", "", "Load summaries and changes", $sprite="clipboard_list", $tags="audit")
+
+ComponentDb(bronze, "Bronze schema", "", "Every load as received, with who, when and source. Never changed.", $sprite="database", $tags="bronze")
+ComponentDb(silver, "Silver schema", "", "Validated PCI per section and survey year. Versions with who, when and why. Conflicts.", $sprite="database", $tags="silver")
+ComponentDb(gold, "Gold schema", "", "Serving tables (view 1)", $sprite="database", $tags="gold")
+
+Rel(guard, jobs, "1  Load request", "UC-05")
+Rel(jobs, adapters, "2  Runs the load")
+Rel(adapters, files, "3  Upload: stores the original file")
+Rel(adapters, pms, "3  Agency connection", "Method pending", $tags="pending")
+Rel(adapters, bronze, "4  Raw rows with the load record")
+Rel(jobs, validation, "5  Validates the load")
+Rel_Back(bronze, validation, "6  Reads raw rows")
+Rel(validation, silver, "7  Validated PCI; conflicts")
+Rel(validation, gold_refresh, "8  Refresh")
+Rel_Back(silver, gold_refresh, "9  Reads current versions")
+Rel(gold_refresh, gold, "10  Rebuilds serving tables")
+Rel(validation, audit, "11  Load summary")
+
+Rel(guard, corrections, "Correction request", "UC-09", $tags="correction")
+Rel(corrections, silver, "New version; resolves conflicts", $tags="correction")
+Rel(corrections, gold_refresh, "Refresh", $tags="correction")
+Rel(corrections, audit, "Who, when and why", $tags="correction")
+
+Rel(retention, files, "Deletes expired files", $tags="retention")
+Rel(retention, audit, "Asks to delete expired answer log entries", $tags="retention")
+
+' Layout only: corrections after validation, retention after the guard.
+
+SHOW_LEGEND()
+@enduml
+
+@startuml c3-3-question-answering
+!include <C4/C4_Component>
+!include style.puml
+
+title API application: question answering (C3, view 3 of 3)
+caption Numbers give the order of the steps for one question.
+
+Container(llm, "Language model", "", "No database access. Never receives result rows.", $sprite="brain", $tags="model")
+
+Boundary(api, "API application") {
+  Boundary(m_access, "Access module") {
+    Component(guard, "Access guard", "", "Checks every request; supplies client, project and permissions", $sprite="shield_alt", $tags="access")
+  }
+  Boundary(m_qa, "Question answering module") {
+    Component(planner, "Query planner", "", "Gets a query plan from the model and validates it", $sprite="sitemap", $tags="qa")
+    Component(judge, "Judge", "", "Checks that the plan answers the question. If not, the planner builds a new plan, up to 3 in total.", $sprite="gavel", $tags="qa")
+    Component(query_builder, "Query builder", "", "Parameterized, read-only query on gold", $sprite="filter", $tags="qa")
+    Component(answer_writer, "Answer writer", "", "Writes the answer from a template; keeps the model's reword only if the figures match", $sprite="file_alt", $tags="qa")
+    Component(llm_port, "Language model interface", "", "The only way to reach the model. One adapter per model option.", $sprite="plug", $tags="qa")
+  }
+  Boundary(m_audit, "Audit module") {
+    Component(audit, "Audit log", "", "Question, plans, verdicts, query, results and texts, kept for a retention period", $sprite="clipboard_list", $tags="audit")
+  }
+}
+
+Boundary(db, "Platform database") {
+  ComponentDb(gold, "Gold schema", "", "Serving tables under row-level security", $sprite="database", $tags="gold")
+}
+
+Rel_R(guard, planner, "1  Checked question")
+Rel_U(planner, llm_port, "2  Build a plan")
+Rel_U(planner, judge, "3  Check the plan")
+Rel_R(judge, llm_port, "4  Verdict")
+Rel_R(planner, query_builder, "5  Accepted plan")
+Rel_D(query_builder, gold, "6  Read-only query")
+Rel_R(query_builder, answer_writer, "7  Query and results")
+Rel_U(answer_writer, llm_port, "8  Reword the template text")
+Rel_R(llm_port, llm, "Calls the model", "HTTPS")
+Rel_D(planner, audit, "Question, plans, verdicts")
+Rel_D(answer_writer, audit, "Query, results, texts")
+
+SHOW_LEGEND()
+@enduml
