@@ -22,8 +22,8 @@ This use case is a load, not a question, so it gives example requests. The year 
 - The client the data belong to (CLAUDE.md requires data isolated by client).
 
 ## Sources
-- CSV files.
-- Exports from the client's existing pavement management databases.
+- CSV and Excel (.xlsx) files, uploaded through the web application.
+- For the funding agency only: an automatic connection to its existing pavement management system. The connection method is not decided yet (ADR 2026-11-23-load-pci-data-by-upload-and-connection).
 - Other formats: not known yet.
 
 ## Expected result
@@ -36,8 +36,8 @@ This use case is a load, not a question, so it gives example requests. The year 
 - Corrections and deletions of loaded data go through UC-09.
 
 ## Open items
-- Formats beyond CSV, and the structure of each client's database exports.
-- Whether the MVP connects to the client's database or receives an export file. To be decided in C2 and an ADR.
+- Formats beyond CSV and Excel, and the structure of each client's files.
+- How the automatic connection for the funding agency works: the platform reads its database, reads through its system's API, or receives scheduled exports. To be decided in an ADR.
 - How column names in each client's files map to section, coordinates, PCI and year.
 - How a repeated section and year is resolved after it is reported.
 - PDFs and other file types are out of phase 1. CLAUDE.md requires that loading can be extended to them later.

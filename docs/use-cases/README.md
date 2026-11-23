@@ -44,7 +44,7 @@ Access is granted per project (UC-08). [assumption] Permission levels:
 - PCI threshold source: per-client setting, stated by the user, or both.
 - Fields beyond section, coordinates, PCI and year (network or district ID, branch use or functional class, area or length).
 - Coordinate format (point or line geometry) and coordinate reference system.
-- Data formats beyond CSV, and the structure of each client's database exports (UC-05).
+- Data formats beyond CSV and Excel, and the structure of each client's files (UC-05).
 - Whether UC-01 to UC-04 answer within the selected project or across all projects the user can access.
 - Sign-in method: platform accounts, or the agency's or airport's own accounts (UC-07).
 - How a section loaded through different projects is matched to the same network section (UC-05).

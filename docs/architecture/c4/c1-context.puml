@@ -3,7 +3,7 @@
 
 title rag-pavimentos-mvp: C1 System context diagram
 
-AddRelTag("pending", $lineStyle=DashedLine(), $legendText="Only if chosen (ADR)")
+AddRelTag("pending", $lineStyle=DashedLine(), $legendText="Method pending (ADR)")
 
 ' Actors and the use cases each one performs (docs/use-cases/).
 ' Every person signs in (UC-07). Load, correct and delete, and manage access
@@ -26,7 +26,9 @@ Person(continuum_admin, "Continuum administrator", "Continuum staff. Sets up eac
 
 System(platform, "Pavement data platform MVP", "Stores PCI data (section, coordinates, PCI, year) for each client's airport or road networks across all survey years. Answers natural-language questions with source rows and tables, and shows PCI in project and section views. Access is granted per project.")
 
-' External system. PCI data reach the MVP in two ways: people upload export files (CSV), or the platform reads from this system through a direct connection, if chosen.
+' External system. PCI data reach the MVP in two ways (ADR 2026-11-23-load-pci-data-by-upload-and-connection):
+' people upload CSV or Excel files, and, for the funding agency only, an automatic connection to this system.
+' The connection method, and so the direction of the arrow, is decided in a later ADR.
 ' Sign-in method not decided (UC-07): an identity provider is not shown until it is.
 System_Ext(pms, "Client pavement management system", "Existing client database with PCI records per section and survey year, with coordinates. Airport or road network.")
 
@@ -41,7 +43,7 @@ Rel(client_manager, platform, "Signs in; grants and removes access to the client
 Rel(project_lead, platform, "Signs in; grants and removes access to their project", "UC-07, UC-08")
 Rel(continuum_admin, platform, "Sets up clients and their first manager; grants and removes project access", "UC-07, UC-08")
 
-Rel(platform, pms, "Reads PCI records (section, coordinates, PCI, year), only if a direct connection is chosen", "UC-05", $tags="pending")
+Rel(platform, pms, "Automatic connection for the funding agency: PCI records (section, coordinates, PCI, year); method pending", "UC-05", $tags="pending")
 
 SHOW_LEGEND()
 @enduml

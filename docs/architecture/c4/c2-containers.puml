@@ -11,7 +11,7 @@ title rag-pavimentos-mvp: C2 Container diagram
 
 AddElementTag("pending", $borderStyle=DashedLine(), $legendText="Decision pending (ADR)")
 AddElementTag("assumption", $borderStyle=DottedLine(), $legendText="[assumption]")
-AddRelTag("pending", $lineStyle=DashedLine(), $legendText="Only if chosen (ADR)")
+AddRelTag("pending", $lineStyle=DashedLine(), $legendText="Method pending (ADR)")
 
 ' People from C1, with the use cases each one performs.
 Person(airport_staff, "Airport pavement management staff")
@@ -24,8 +24,9 @@ Person(project_lead, "Project lead")
 Person(continuum_admin, "Continuum administrator")
 
 ' External system from C1.
-' Export files from this system are uploaded by people through the web application (UC-05).
-' A direct connection is the other option; it is drawn as a pending relationship.
+' CSV and Excel files are uploaded by people through the web application (UC-05).
+' For the funding agency only, the API application also has an automatic connection to this system.
+' Its method, and so the direction of the arrow, is pending (ADR 2026-11-23-load-pci-data-by-upload-and-connection).
 ' Sign-in method not decided (UC-07): an identity provider is not shown until it is.
 System_Ext(pms, "Client pavement management system", "Existing client database with PCI records per section and survey year, with coordinates.")
 
@@ -59,7 +60,7 @@ Rel(web, api, "Sends requests; receives answers, tables and section PCI series",
 Rel(api, llm, "Sends the question and retrieved PCI rows; receives the answer text", "HTTPS; UC-01 to UC-04")
 Rel(api, db, "Reads and writes PCI records, projects, permissions and change history", "SQL; UC-01 to UC-09")
 Rel(api, files, "Stores and reads original uploaded files", "UC-05, UC-09")
-Rel(api, pms, "Reads PCI records", "Direct connection, only if chosen; UC-05", $tags="pending")
+Rel(api, pms, "Automatic connection for the funding agency: PCI records", "Method pending; UC-05", $tags="pending")
 
 SHOW_LEGEND()
 @enduml
