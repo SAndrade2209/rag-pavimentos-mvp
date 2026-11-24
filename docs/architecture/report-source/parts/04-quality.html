@@ -1,0 +1,49 @@
+<div class="sec">
+  <h1 id="quality" data-toc="1">3. Quality attributes</h1>
+
+  <p>Priorities were confirmed on 2026-11-23. Terms follow the architecture characteristics in course material based on Richards and Ford (2025). The method keeps the list short and picks the few attributes that matter most; every ADR states which of them it gains and which it sacrifices (Section 7.2).</p>
+
+  <h2 id="qa-levels">3.1 Priority levels</h2>
+  <table class="tight">
+    <thead><tr><th style="width:20%">Level</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><strong>High</strong></td><td>Drives architecture decisions. Every ADR states how it affects these. At most four.</td></tr>
+      <tr><td><strong>Medium</strong></td><td>Met through simple, standard choices, without dedicated design effort.</td></tr>
+      <tr><td><strong>Nice to have</strong></td><td>Only if it costs almost nothing, or a client requires it.</td></tr>
+      <tr><td><strong>Constraint</strong></td><td>Pass or fail. Not ranked and not traded against other attributes.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="qa-constraints">3.2 Constraints</h2>
+  <ul>
+    <li>Data, backups and language model processing stay in the US (MVP). Other regions are out of the MVP.</li>
+    <li>The platform runs on any major cloud provider.</li>
+  </ul>
+
+  <h2 id="qa-ranked">3.3 Ranked attributes</h2>
+  <table>
+    <thead><tr><th style="width:19%">Attribute</th><th style="width:9%">Priority</th><th>Why it matters</th><th style="width:21%">Cost accepted</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Security</strong> (authentication, authorization, client data isolation)</td><td>High</td><td>UC-07: users see only the projects granted to them, and a user without access cannot sign in. UC-08: permissions are set per project. UC-09: only users with the Correct and delete permission change data. Several clients with government data share the platform, so one client must never see another's data.</td><td>Every query and screen checks permissions, and there is more to test.</td></tr>
+      <tr><td><strong>Data traceability</strong> (archivability and audit trail)</td><td>High</td><td>UC-05: new survey years are added, and an existing section and year is reported, not overwritten. UC-06: the section view shows every survey year on the network, including years loaded through other projects. UC-09: corrected and deleted values are kept with who, when and why. UC-02 and UC-03 depend on that full history.</td><td>More storage and a more involved data model than overwriting values.</td></tr>
+      <tr><td><strong>Deployability and simplicity</strong></td><td>High</td><td>"An MVP that deploys fast" (CLAUDE.md). Not tied to one use case: it decides how quickly UC-01 to UC-09 reach users. Favors few containers (modular monolith) and well-known technologies.</td><td>Some parts may need rework if the platform grows well beyond the MVP.</td></tr>
+      <tr><td><strong>Recoverability</strong></td><td>High</td><td>The network history built through UC-05 and UC-09 exists only in the platform: clients cannot rebuild the corrections, their reasons, or the history merged across projects from their own files. UC-02, UC-03 and UC-06 depend on it. Minimum: automatic daily backups of the database and files, kept in a separate US location, with a restore tested.</td><td>Low at this level; stricter targets cost more.</td></tr>
+      <tr><td><strong>Maintainability</strong></td><td>Medium</td><td>The use cases will change after the first users. Met by clear modules and automated tests on the rules that matter most: permissions (UC-07, UC-08) and PCI history and corrections (UC-05, UC-09).</td><td>Time spent writing tests.</td></tr>
+      <tr><td><strong>Extensibility</strong> (data loading and language model)</td><td>Medium</td><td>UC-05: CSV now, client database exports, PDFs later. UC-01 to UC-04: the language model must be switchable between hosted and self-hosted. A replaceable interface is built only at these two points, where a second option is already planned.</td><td>A little more design in two modules.</td></tr>
+      <tr><td><strong>Performance</strong> (response time)</td><td>Medium</td><td>UC-01 to UC-04 return answers that include language model calls; UC-06 opens the project overview and section view. "Response times must be reasonable" (CLAUDE.md). A target is not defined yet.</td><td>Caching and query tuning, if a strict target is set.</td></tr>
+      <tr><td><strong>Usability</strong></td><td>Medium</td><td>UC-06: project overview and section view, following the demo's display. UC-01 to UC-04: answers state the threshold, years and filters used, so engineers can check them. Users are pavement engineers and airport staff.</td><td>Interface design and testing with users.</td></tr>
+      <tr><td><strong>Interoperability</strong></td><td>Medium</td><td>UC-05: PCI data come from CSV files and from client pavement management systems (export file or direct connection). UC-01 to UC-04: tables are downloadable.</td><td>Mapping each client's column names to section, coordinates, PCI and year.</td></tr>
+      <tr><td><strong>Localization</strong> (units)</td><td>Nice to have</td><td>UC-04 uses a search radius, so distance units matter; the demo has a units switch (US). International clients are out of the MVP.</td><td>Unit conversion in the location search and displays.</td></tr>
+      <tr><td><strong>Accessibility</strong></td><td>Nice to have</td><td>No use case requires it. Public agencies may require it in their solicitations; if a client does, it moves up.</td><td>Interface work and checks.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="qa-not">3.4 Not optimized</h2>
+  <p>Decisions do not spend effort on these:</p>
+  <ul>
+    <li>Scalability to millions of users.</li>
+    <li>Multi-zone high availability.</li>
+    <li>On-demand elasticity.</li>
+    <li>Privacy beyond standard security, such as hiding data even from administrators.</li>
+  </ul>
+</div>

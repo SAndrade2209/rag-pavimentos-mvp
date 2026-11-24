@@ -1,0 +1,37 @@
+<div class="sec">
+  <div class="kicker">Appendices</div>
+  <h1 id="glossary" data-toc="1" data-part="Appendices">Appendix A. Glossary</h1>
+  <table class="tight legend-t">
+    <thead><tr><th style="width:24%">Term</th><th>Meaning in this report</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Access guard</strong></td><td>The component that checks every request to the API application and denies by default (ADR 7).</td></tr>
+      <tr><td><strong>ADR</strong></td><td>Architecture decision record: one decision with its context, options, the attributes it gains and sacrifices, and its consequences.</td></tr>
+      <tr><td><strong>Answer template</strong></td><td>Fixed text for one query plan operation, filled with values from the query results or the validated plan (ADR 6).</td></tr>
+      <tr><td><strong>Bronze, silver, gold</strong></td><td>The three data layers of the platform database: loads as received; validated PCI with versions; serving tables (ADR 7).</td></tr>
+      <tr><td><strong>C4 model</strong></td><td>A way to describe software architecture at four levels of detail: context, containers, components and code (Simon Brown). This project uses the first three (ADR 1).</td></tr>
+      <tr><td><strong>Client</strong></td><td>An agency or airport whose data the platform holds, isolated from other clients (ADR 3).</td></tr>
+      <tr><td><strong>Column mapping</strong></td><td>The saved link between a client's column names and section, coordinates, PCI and year (ADR 4).</td></tr>
+      <tr><td><strong>Component (C4)</strong></td><td>A part of a container with one responsibility, such as the access guard or the query planner.</td></tr>
+      <tr><td><strong>Conflict</strong></td><td>A loaded row for a section and survey year that already exist. The existing value stays and the load summary shows both (UC-05).</td></tr>
+      <tr><td><strong>Container (C4)</strong></td><td>An application or data store: here the web application, API application, language model, platform database and file storage.</td></tr>
+      <tr><td><strong>Funding agency</strong></td><td>The government agency that may fund development. Its pavement management system gets the automatic connection (ADR 4).</td></tr>
+      <tr><td><strong>Gold refresh</strong></td><td>The rebuild of a client's gold tables from silver, in the same database transaction as a load or correction (ADR 7).</td></tr>
+      <tr><td><strong>Input adapter</strong></td><td>Reads one source (CSV, Excel, the agency connection; PDFs later) into the internal format (ADR 4).</td></tr>
+      <tr><td><strong>Judge</strong></td><td>A model call that checks whether a query plan answers the question, before the query runs (ADR 6).</td></tr>
+      <tr><td><strong>Load job</strong></td><td>A retryable background job, in the same process, that runs an upload or a connection run (ADR 7).</td></tr>
+      <tr><td><strong>M&amp;R</strong></td><td>Maintenance and rehabilitation (UC-01).</td></tr>
+      <tr><td><strong>MFA</strong></td><td>Multi-factor authentication (ADR 2).</td></tr>
+      <tr><td><strong>Modular monolith</strong></td><td>One deployable application split into modules by business area, each owning its tables (ADR 7).</td></tr>
+      <tr><td><strong>OpenID Connect</strong></td><td>The sign-in standard between the platform and the identity service; the API accepts only signed sign-in tokens (ADR 2).</td></tr>
+      <tr><td><strong>PCI</strong></td><td>Pavement Condition Index, stored per section and survey year on a 0 to 100 scale (UC-05).</td></tr>
+      <tr><td><strong>Project</strong></td><td>How PCI data arrive and where they are shown. Access is granted per project (UC-08).</td></tr>
+      <tr><td><strong>Query plan</strong></td><td>A structured request built from filters and operations, validated by the API and turned into a parameterized query (ADR 6).</td></tr>
+      <tr><td><strong>Retention period</strong></td><td>How long original files and answer log entries are kept before deletion; set with each client (ADR 7).</td></tr>
+      <tr><td><strong>Reword check</strong></td><td>The API keeps the model's reworded answer only if it has the same numbers, survey years and section identifiers as the template text, in the same order (ADR 6).</td></tr>
+      <tr><td><strong>Row-level security</strong></td><td>A database feature that returns only the rows a policy allows; here, the rows of the requesting client (ADR 3).</td></tr>
+      <tr><td><strong>Section</strong></td><td>A pavement section of an airport or road network. PCI is recorded per section and survey year.</td></tr>
+      <tr><td><strong>Single sign-on</strong></td><td>Signing in with the client organization's own accounts, for clients that require it (ADR 2).</td></tr>
+      <tr><td><strong>Survey year</strong></td><td>The year of a PCI survey. Every survey year is kept; years without a survey are shown as gaps (UC-02, UC-06).</td></tr>
+    </tbody>
+  </table>
+</div>

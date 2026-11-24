@@ -1,0 +1,126 @@
+<div class="adr">
+  <div class="kicker">Decision record 7 of 7</div>
+  <h2 class="adr-title" id="adr7" data-toc="2"><span class="n">8.7 ADR 7.</span> Modular monolith, data layers, retention</h2>
+  <div class="adr-full">Structure the backend as a modular monolith with data layers and retention periods</div>
+  <div class="adr-meta"><span class="chip ok">Accepted</span> 2026-11-23, replaces the data layers ADR (Section 9) &middot; <span class="path">docs/architecture/adr/2026-11-23-backend-modular-monolith-with-data-layers-and-retention.md</span></div>
+
+  <div class="grid2">
+    <div class="box what"><div class="label">What it does</div>
+      <p class="lead">Sets the inside of the API application: one deployable, split into seven modules by business area, each owning its tables. PCI data move through three layers of the same database: bronze keeps every load exactly as received, silver keeps validated PCI with every version, and gold holds the serving tables that views and answers read, rebuilt in the same transaction as each load or correction. Loads run as background jobs in the same process. Original files and answer logs are kept for a retention period; the PCI history is kept.</p></div>
+    <div class="box why"><div class="label">Why this option</div>
+      <p>Option F starts from the balanced modular monolith (option E) and adds the bronze, silver and gold layers and kept original files. On the ADR's relative scale this gains one step of recoverability, at the cost of more tables, a refresh step, file storage and a retention job. It avoids event sourcing, a second deployable and a separate job queue.</p></div>
+  </div>
+
+  <h3>Context</h3>
+  <ul>
+    <li>C2 has one API application, a modular monolith (CLAUDE.md). This ADR decides its internal structure (C3).</li>
+    <li>Already fixed by accepted ADRs: sign-in tokens from the identity service (ADR 2); client isolation with row-level security (ADR 3); CSV and Excel upload plus the agency connection through one validation path (ADR 4); the language model reached only through an interface (ADR 5); answers grounded through judged query plans and answer templates (ADR 6).</li>
+    <li>Needs from the use cases: loads that can be run again safely, with a summary of rows added, conflicts and rejected rows (UC-05); corrections that keep old values (UC-09); PCI by survey year for the views and the answers (UC-02, UC-03, UC-06); access per project (UC-07, UC-08).</li>
+    <li>Loads and use: the largest load is expected to be the initial load of each client's PCI history, of unknown size; later loads add survey years, yearly or less often per client. Few users work at the same time. Original uploaded files are kept for a period as evidence of each load. PDFs come later, and file storage will hold them.</li>
+    <li>Reproducing what the platform showed on a past date ("time travel") is not required.</li>
+    <li>This ADR replaces the data layers ADR. The modules and the three layers stay; gold is now rebuilt in the same transaction as each load or correction, original files and answer logs have retention periods, the audit log records denied requests rather than every request, and option F is scored with the others.</li>
+  </ul>
+
+  <h3>Options</h3>
+  <p>One option per high-priority attribute, in the order of the quality attributes, a balanced option and a combination.</p>
+  <table class="opts">
+    <thead><tr><th>Option</th><th>Description from the ADR</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td>A. Security first</td><td>A monolith split into two parts, with a security core: a request guard that denies by default, a database role per module, a separate answer service with read-only rights, a secrets store, and a log of every access decision. Needs a second deployable.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>B. Data traceability first</td><td>An event-sourced core: no value is ever overwritten; every change is stored as a permanent event, and current values and views are computed from the events. Includes time travel.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>C. Deployability and simplicity first</td><td>A plain layered monolith (endpoints, services, data access) with only the adapters the ADRs require. Everything runs inside the request.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>D. Recoverability first</td><td>A stateless API, a durable job queue with a separate worker, a load ledger that allows rebuilding data by replay, export and restore of one client at a time, and scheduled test restores. Needs a second deployable, and original files must be kept.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>E. Balanced</td><td>A modular monolith by business area, with one central access guard, versioned PCI history, a load ledger, and background jobs in the same process.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>F. E with selected parts of A, B and D</td><td>E's structure; bronze, silver and gold data layers in place of B's events; retryable loads with a conflict summary from D; read-only answering with values sent as parameters by the API, from A and ADR 6.</td><td><span class="chip ok">Chosen</span></td></tr>
+    </tbody>
+  </table>
+
+  <h4>Comparison against the quality attributes</h4>
+  <table class="tight" style="width:80%">
+    <thead><tr><th>Attribute (priority)</th><th class="c">A</th><th class="c">B</th><th class="c">C</th><th class="c">D</th><th class="c">E</th><th class="c" style="background:#DCFCE7">F</th></tr></thead>
+    <tbody>
+      <tr><td>Security (high)</td><td class="c">5</td><td class="c">3</td><td class="c">3</td><td class="c">3</td><td class="c">4</td><td class="c"><strong>4</strong></td></tr>
+      <tr><td>Data traceability (high)</td><td class="c">3</td><td class="c">5</td><td class="c">2</td><td class="c">4</td><td class="c">4</td><td class="c"><strong>4</strong></td></tr>
+      <tr><td>Deployability and simplicity (high)</td><td class="c">2</td><td class="c">1</td><td class="c">5</td><td class="c">2</td><td class="c">4</td><td class="c"><strong>3</strong></td></tr>
+      <tr><td>Recoverability (high)</td><td class="c">3</td><td class="c">4</td><td class="c">2</td><td class="c">5</td><td class="c">3</td><td class="c"><strong>4</strong></td></tr>
+      <tr><td>Maintainability (medium)</td><td class="c">3</td><td class="c">2</td><td class="c">3</td><td class="c">3</td><td class="c">4</td><td class="c"><strong>4</strong></td></tr>
+      <tr><td>Extensibility (medium)</td><td class="c">3</td><td class="c">4</td><td class="c">3</td><td class="c">4</td><td class="c">4</td><td class="c"><strong>4</strong></td></tr>
+      <tr><td>Performance (medium)</td><td class="c">3</td><td class="c">3</td><td class="c">3</td><td class="c">4</td><td class="c">3</td><td class="c"><strong>3</strong></td></tr>
+      <tr><td>Relative operating cost</td><td class="c small">medium to high</td><td class="c small">medium</td><td class="c small">low</td><td class="c small">medium to high</td><td class="c small">low to medium</td><td class="c small">low to medium</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Scores: 1 weakest, 5 strongest of the six options; relative judgments, not measurements. Model calls and the identity service subscription cost the same in all options. Compared with E, F keeps the raw rows in bronze and the original files for a period: recoverability gains one step, traceability less than one step on this scale.</p>
+
+  <h3>Decision: option F</h3>
+  <h4>Structure</h4>
+  <p>One deployable API application, split into modules by business area. Each module owns its tables, and other modules use it only through its interface.</p>
+  <table>
+    <thead><tr><th style="width:17%">Module</th><th>Components and responsibilities</th><th style="width:13%">Use cases</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip m-access">Access</span></td><td><strong>Access guard:</strong> on every request, checks the sign-in token, resolves the user and client, loads project permissions and sets the client for row-level security; denies by default. <strong>Access management:</strong> grants and removes project access and permissions.</td><td>UC-07, UC-08</td></tr>
+      <tr><td><span class="chip m-projects">Projects</span></td><td>Project list and workspace, limited to the projects granted to the user.</td><td>UC-06, UC-07</td></tr>
+      <tr><td><span class="chip m-loading">Loading</span></td><td><strong>Input adapters</strong> for CSV, Excel and the agency connection, using the column mapping saved per client; each uploaded file goes to file storage and its rows to bronze. <strong>Load jobs:</strong> uploads and agency connection runs are retryable background jobs in the same process, tracked in a job table; running a load again does not duplicate rows. Loads run in the background because the initial load of a client's history may take longer than a web request allows. <strong>Validation and load summary:</strong> moves rows from bronze to silver with the UC-05 checks, and lists rows added, conflicts and rejected rows with the reason. <strong>Retention job:</strong> a scheduled job in the same process; deletes original files when their retention period ends and asks the audit module to delete expired answer log entries.</td><td>UC-05</td></tr>
+      <tr><td><span class="chip m-pci">PCI data</span></td><td><strong>Corrections:</strong> corrects or deletes PCI values as new versions with who, when and why, and resolves load conflicts. <strong>Gold refresh:</strong> rebuilds the client's gold tables from silver in the same database transaction as each load or correction, so gold never shows a partial or outdated state.</td><td>UC-09</td></tr>
+      <tr><td><span class="chip m-views">Views</span></td><td>Project overview and section view, read from gold.</td><td>UC-06</td></tr>
+      <tr><td><span class="chip m-qa">Question answering</span></td><td>Query planner, judge, query builder, answer writer with templates and the reword check, and the language model interface (ADR 5, ADR 6). Read-only database access, to gold only.</td><td>UC-01 to UC-04</td></tr>
+      <tr><td><span class="chip m-audit">Audit</span></td><td>Log of PCI data changes, project access grants and removals, denied requests, load summaries, and the answer log of ADR 6. Allowed requests are not logged one by one.</td><td>All</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Data layers</h4>
+  <p>Three schemas in the same platform database, all under row-level security:</p>
+  <ul>
+    <li><span class="chip d-bronze">Bronze</span> every load exactly as received, with who loaded it, when, and the source file or connection run. Never changed.</li>
+    <li><span class="chip d-silver">Silver</span> validated PCI per network section and survey year. Corrections and deletions are new versions with who, when and why. Conflicts are recorded here.</li>
+    <li><span class="chip d-gold">Gold</span> serving tables: latest PCI per section, PCI by survey year, project overview and network summaries. Rebuilt from silver with each load or correction.</li>
+  </ul>
+
+  <h4>Retention</h4>
+  <ul>
+    <li>Original uploaded files stay in file storage for a retention period, then are deleted. Bronze keeps the rows of every load, so each load stays traceable after its file is deleted.</li>
+    <li>Answer log entries stay for a retention period, then are deleted (ADR 6).</li>
+    <li>Retention applies only to these two. PCI records in bronze and silver, with their versions, are the network's PCI history and are kept (UC-05, UC-09).</li>
+    <li>Each module deletes its own records: the loading module deletes files, and the audit module deletes answer log entries when the retention job asks. The retention periods are set with each client.</li>
+  </ul>
+
+  <h4>Other rules</h4>
+  <ul>
+    <li><strong>Conflict rule:</strong> when a load brings a section and survey year that already exist, the existing value stays, and the load summary shows both values. A user with the Correct and delete permission can accept the new value as a correction (UC-09), with a reason.</li>
+    <li><strong>Not built:</strong> time travel.</li>
+    <li><strong>Secrets:</strong> keys for the language model, the identity service and the agency connection come from the cloud provider's secret manager and are injected as settings when the application starts. The code reads settings only and never calls the provider directly, so changing providers changes the deployment setup, not the code.</li>
+    <li><strong>Module boundaries</strong> are checked in code review and by simple automated checks, for example a test that fails if one module reads another module's tables.</li>
+  </ul>
+
+  <h3>Attributes</h3>
+  <table class="attr">
+    <thead><tr><th class="gain">Gained</th><th class="cost">Sacrificed</th></tr></thead>
+    <tbody><tr>
+      <td><ul>
+        <li><strong>Security (high):</strong> one guard on every request, denying by default, and denied requests are logged. Answering has read-only access to gold only; plan values travel as parameters, and the API adds client, project and permissions. Row-level security covers every layer. Secrets stay outside the code.</li>
+        <li><strong>Data traceability (high):</strong> bronze keeps exactly what each client sent, and file storage keeps the original file for its retention period; silver keeps every version with who, when and why; the answer log links each answer to its plans, verdicts, query and rows.</li>
+        <li><strong>Deployability and simplicity (high):</strong> one deployable; no event sourcing; load jobs and the retention job run in the same process, with no separate worker or queue.</li>
+        <li><strong>Recoverability (high):</strong> failed loads can be run again; gold can be rebuilt from silver; silver can be checked against bronze and, during the retention period, against the original files; one database backup covers all layers.</li>
+        <li><strong>Maintainability (medium):</strong> modules by business area, each owning its tables and deleting its own records for retention.</li>
+        <li><strong>Extensibility (medium):</strong> a new source is a new input adapter into bronze; a new dashboard is a new gold table; PDFs later use file storage and the same loading path.</li>
+      </ul></td>
+      <td><ul>
+        <li><strong>Deployability and simplicity (high), partly:</strong> three data layers mean more tables than a plain layered design; each load or correction includes a gold refresh; file storage is one more container to run and back up; the retention job is one more scheduled task.</li>
+        <li><strong>Performance (medium), slightly:</strong> each load or correction waits for its gold refresh, and background jobs share the process with requests. Accepted because few users work at the same time and loads are infrequent.</li>
+        <li><strong>Recoverability (high), partly:</strong> one client cannot be restored alone (as noted in ADR 3), and there are no scheduled test restores beyond the minimum in the quality attributes.</li>
+        <li><strong>Security (high), partly:</strong> compared with option A, answering runs in the same process as the rest. It is limited by its read-only database role, not by a process boundary. Allowed requests are not logged one by one, so the audit log cannot list every read of a client's data.</li>
+        <li><strong>Data traceability (high), partly:</strong> no time travel; original files and answer log entries are deleted after their retention periods.</li>
+      </ul></td>
+    </tr></tbody>
+  </table>
+
+  <h3>Consequences</h3>
+  <ul>
+    <li>C3: the component diagrams show these modules, their components, the three data layers, file storage and the retention job (Section 10).</li>
+    <li>C2: the platform database description names the three layers and the answer log retention. File storage is a container, no longer an assumption.</li>
+    <li>UC-05 keeps the conflict rule and rerunnable loads.</li>
+    <li>The building blocks of the query plans (ADR 6) map to gold tables.</li>
+    <li>Storage grows with every load, since bronze keeps every raw row. Original files stop taking space when their retention period ends.</li>
+    <li>If a client later needs to be restored alone, or answering must run in its own process, options D or A are reconsidered in a new ADR.</li>
+    <li>If a client's security requirements call for a log of every allowed request, the audit module adds it through a new ADR.</li>
+  </ul>
+</div>

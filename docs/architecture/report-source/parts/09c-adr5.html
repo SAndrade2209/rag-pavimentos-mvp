@@ -1,0 +1,69 @@
+<div class="adr">
+  <div class="kicker">Decision record 5 of 7</div>
+  <h2 class="adr-title" id="adr5" data-toc="2"><span class="n">8.5 ADR 5.</span> Replaceable language model interface</h2>
+  <div class="adr-full">Put the language model behind a replaceable interface</div>
+  <div class="adr-meta"><span class="chip ok">Accepted</span> 2026-11-23 &middot; <span class="path">docs/architecture/adr/2026-11-23-language-model-behind-replaceable-interface.md</span></div>
+
+  <div class="grid2">
+    <div class="box what"><div class="label">What it does</div>
+      <p class="lead">Places one small interface between the platform and any language model. Only the question answering module calls it, and each model option is an adapter behind it, selected in configuration. Moving between a hosted and a self-hosted model means one new adapter and a setting, and the interface is the single point where client data can leave the platform toward a model.</p></div>
+    <div class="box why"><div class="label">Why this option</div>
+      <p>It keeps a model switch cheap without adding a container (a gateway service) or a dependency the team does not control (a library that wraps many providers).</p></div>
+  </div>
+
+  <h3>Context</h3>
+  <ul>
+    <li>UC-01 to UC-04 need a language model to interpret natural-language questions and to help write the answers.</li>
+    <li>Whether the model is hosted (a provider's API) or self-hosted (an open-weight model run by the team) is not decided. The platform must allow switching later without rework.</li>
+    <li>Constraint: language model processing stays in the US. Every model option must meet it.</li>
+    <li>Attributes involved: security (high), deployability and simplicity (high), extensibility (medium), maintainability (medium).</li>
+  </ul>
+  <p class="note">The ADR names "draft the answer from retrieved PCI rows" as an example operation. ADR 6 replaced that approach: the interface now has three operations, build a query plan, judge a plan and reword a template text, and the model receives no result rows.</p>
+
+  <h3>Options</h3>
+  <table class="opts">
+    <thead><tr><th>Option</th><th>Notes from the ADR</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td>1. Call one model provider directly</td><td>From wherever the code needs it. Simplest today. Switching means finding and changing every call.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>2. One small interface inside the API application</td><td>One implementation (adapter) per model option. Only the first adapter is built now.</td><td><span class="chip ok">Chosen</span></td></tr>
+      <tr><td>3. A third-party library that wraps many model providers</td><td>For example, LiteLLM or LangChain. Switching among supported providers becomes a setting, but it adds a dependency the team does not control, and its abstractions may not fit.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>4. A separate gateway service</td><td>Between the API application and the model. The most flexible, but it adds a container to deploy and operate.</td><td><span class="chip no">Not chosen</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Decision</h3>
+  <ul>
+    <li>The API application has one interface for the language model, with the operations UC-01 to UC-04 need.</li>
+    <li>Only the question answering module calls this interface. No other code calls a model provider directly.</li>
+    <li>One adapter is built, for the first model chosen. A second adapter is written only when the team switches or compares models.</li>
+    <li>The model and its endpoint are set in configuration, not in code.</li>
+    <li>A fixed set of test questions, taken from the examples in UC-01 to UC-04, with expected answers checked by a pavement engineer, is run before and after any change of model.</li>
+    <li>Hosted or self-hosted is decided in a separate ADR.</li>
+  </ul>
+
+  <h3>Attributes</h3>
+  <table class="attr">
+    <thead><tr><th class="gain">Gained</th><th class="cost">Sacrificed</th></tr></thead>
+    <tbody><tr>
+      <td><ul>
+        <li><strong>Extensibility (medium):</strong> switching between hosted and self-hosted takes one new adapter and a configuration change.</li>
+        <li><strong>Security (high):</strong> the interface is the single point where client data leave the API application toward the model. It controls what is sent, never another client's data, and can log each call. Under ADR 6, result rows are not sent at all.</li>
+        <li><strong>Maintainability (medium):</strong> prompts and model settings live in one module.</li>
+        <li><strong>Deployability and simplicity (high):</strong> no new container and no new external dependency, unlike options 3 and 4.</li>
+      </ul></td>
+      <td><ul>
+        <li><strong>Deployability and simplicity, slightly:</strong> some extra code compared with calling a provider directly (option 1).</li>
+        <li><strong>Performance (medium), potentially:</strong> features specific to one provider, such as streaming an answer while it is generated, must be added to the interface explicitly before they can be used.</li>
+      </ul></td>
+    </tr></tbody>
+  </table>
+
+  <h3>Consequences</h3>
+  <ul>
+    <li>C2: the language model container stays marked "decision pending" until the hosted or self-hosted ADR.</li>
+    <li>C3: the question answering module owns the interface and its adapters.</li>
+    <li>Every adapter must use an endpoint that processes data in the US.</li>
+    <li>Answers can change when the model changes. The test set is the check, so it has to be written and kept current.</li>
+    <li>If several models are needed at once, or routing between them, options 3 and 4 are reconsidered in a new ADR.</li>
+  </ul>
+</div>

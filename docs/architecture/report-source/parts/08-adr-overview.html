@@ -1,0 +1,49 @@
+<div class="sec">
+  <div class="kicker">Part III. Decisions</div>
+  <h1 id="decisions" data-toc="1" data-part="Part III. Decisions">7. Decisions overview</h1>
+
+  <p>Each architecture decision is recorded as an ADR in <code>docs/architecture/adr/</code>, named <code>YYYY-MM-DD-title.md</code>. Every ADR has the same parts: context (forces, constraints and options considered), decision, attributes gained, attributes sacrificed and consequences. Seven ADRs are accepted. Two were replaced on 2026-11-23 and are summarized in Section 9.</p>
+
+  <h2 id="adr-order">7.1 Reading order</h2>
+  <p>The ADRs are presented so that each one relies only on the ones before it: first the documentation method, then who can enter, which client's data they see, how data arrive, how the model is reached, how answers are grounded, and last the structure of the backend that holds all of it. ADR 4 takes its expected number of clients from ADR 3; ADR 6 builds on ADRs 3 and 5; ADR 7 lists ADRs 2 to 6 as already fixed. ADRs 6 and 7 were revised together and refer to each other for the retention of answer logs. The numbers 1 to 7 are this reading order; in the repository, ADRs are identified by file name.</p>
+  <table class="tight">
+    <thead><tr><th class="c" style="width:5%">#</th><th style="width:27%">ADR</th><th>What it decides</th><th style="width:25%">Where it shows</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td><strong>Document the architecture with the C4 model and diagrams as code in PlantUML</strong></td><td>C4 levels C1 to C3, no level 4; PlantUML with the C4-PlantUML library; styled copies for presenting</td><td>Every diagram</td></tr>
+      <tr><td class="c">2</td><td><strong>Delegate sign-in to an identity service</strong></td><td>Hosted identity service through OpenID Connect, with MFA, single sign-on and Google Workspace; authorization stays in the platform</td><td>C1 external systems; C2 sign-in relationships; access guard (C3)</td></tr>
+      <tr><td class="c">3</td><td><strong>Isolate client data in shared tables with row-level security</strong></td><td>A client identifier on every client table; row-level security in the database plus filtering in the API</td><td>Platform database (C2); every schema (C3)</td></tr>
+      <tr><td class="c">4</td><td><strong>Load PCI data by file upload and by an automatic connection</strong></td><td>CSV and Excel upload for every client; automatic connection for the funding agency; one validation path</td><td>Client pavement management system (C1, C2); input adapters (C3)</td></tr>
+      <tr><td class="c">5</td><td><strong>Put the language model behind a replaceable interface</strong></td><td>One interface, one adapter per model option, model and endpoint in configuration</td><td>Language model (C2); language model interface (C3)</td></tr>
+      <tr><td class="c">6</td><td><strong>Ground answers through judged query plans and answer templates</strong></td><td>Query plans from blocks, a judge before the query, answers from templates with a checked reword</td><td>API to model relationship (C2); question answering module (C3 view 3)</td></tr>
+      <tr><td class="c">7</td><td><strong>Structure the backend as a modular monolith with data layers and retention periods</strong></td><td>Seven modules in one deployable; bronze, silver and gold schemas; retention periods for original files and answer logs</td><td>API application, database and file storage (C2); all of C3</td></tr>
+    </tbody>
+  </table>
+
+  <div class="keep">
+  <h2 id="adr-tradeoffs">7.2 Quality attribute trade-offs</h2>
+  <p>Each ADR states the quality attributes it gains and the ones it sacrifices. The matrix puts them side by side for ADRs 2 to 7, with the qualifiers each ADR uses. ADR 1 concerns documentation and is judged on documentation qualities instead (8.1).</p>
+  <table class="matrix">
+    <thead>
+      <tr><th rowspan="2" style="width:9%">ADR</th><th colspan="4" class="hi">High priority</th><th colspan="5" class="me">Medium priority</th></tr>
+      <tr><th class="hi">Security</th><th class="hi">Data trace&shy;ability</th><th class="hi">Deploy&shy;ability and simplicity</th><th class="hi">Recover&shy;ability</th><th class="me">Maintain&shy;ability</th><th class="me">Extens&shy;ibility</th><th class="me">Perfor&shy;mance</th><th class="me">Usability</th><th class="me">Interop&shy;erability</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>2</strong> Sign-in</td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td></td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td></td><td></td><td></td><td></td><td><span class="g">+</span></td><td><span class="g">+</span></td></tr>
+      <tr><td><strong>3</strong> Isolation</td><td><span class="g">+</span></td><td></td><td><span class="g">+</span><br><span class="s">&minus; <em>slightly</em></span></td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td></td><td></td><td><span class="s">&minus; <em>slightly</em></span></td><td></td><td></td></tr>
+      <tr><td><strong>4</strong> Loading</td><td><span class="s">&minus; <em>partly</em></span></td><td><span class="g">+</span></td><td><span class="s">&minus;</span></td><td></td><td></td><td><span class="g">+</span></td><td></td><td><span class="g">+</span></td><td><span class="g">+</span></td></tr>
+      <tr><td><strong>5</strong> Model interface</td><td><span class="g">+</span></td><td></td><td><span class="g">+</span><br><span class="s">&minus; <em>slightly</em></span></td><td></td><td><span class="g">+</span></td><td><span class="g">+</span></td><td><span class="s">&minus; <em>potentially</em></span></td><td></td><td></td></tr>
+      <tr><td><strong>6</strong> Grounding</td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td><span class="s">&minus; <em>partly</em></span></td><td></td><td><span class="g">+</span></td><td></td><td><span class="s">&minus;</span></td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td></td></tr>
+      <tr><td><strong>7</strong> Backend</td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td><span class="g">+</span><br><span class="s">&minus; <em>partly</em></span></td><td><span class="g">+</span></td><td><span class="g">+</span></td><td><span class="s">&minus; <em>slightly</em></span></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+  <p class="note"><span class="g">+</span> gained; <span class="s">&minus;</span> sacrificed, with the qualifier used in the ADR. Localization and accessibility (nice to have) are not affected by any ADR.</p>
+  </div>
+
+  <h3 id="adr-tradeoffs-read">Reading the matrix</h3>
+  <ul>
+    <li><strong>Security</strong> is gained in five of the six ADRs. ADR 4 accepts a partial cost: the platform holds access to one client system, which has to be protected.</li>
+    <li><strong>Deployability and simplicity</strong> carries a cost in every ADR from 2 to 7, partly offset where the same ADR also gains it, for example no new container in ADRs 2 and 5 and one database for all clients in ADR 3.</li>
+    <li><strong>Performance</strong>, a medium priority, is the attribute most often given up: ADRs 3, 5, 6 and 7 each accept a cost to it.</li>
+    <li><strong>Recoverability</strong> is shaped by ADRs 3 and 7. Both note that restoring one client's data on its own is harder with a shared database.</li>
+  </ul>
+</div>

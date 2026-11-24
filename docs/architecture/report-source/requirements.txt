@@ -1,0 +1,2 @@
+pypdf==6.21.4
+pymupdf==1.26.5  # only for contact_sheets.py

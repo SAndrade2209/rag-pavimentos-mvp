@@ -1,0 +1,118 @@
+<div class="adr">
+  <div class="kicker">Decision record 6 of 7</div>
+  <h2 class="adr-title" id="adr6" data-toc="2"><span class="n">8.6 ADR 6.</span> Judged query plans and answer templates</h2>
+  <div class="adr-full">Ground answers through judged query plans and answer templates</div>
+  <div class="adr-meta"><span class="chip ok">Accepted</span> 2026-11-23, replaces the validated query plans ADR (Section 9) &middot; <span class="path">docs/architecture/adr/2026-11-23-ground-answers-with-judged-plans-and-answer-templates.md</span></div>
+
+  <div class="grid2">
+    <div class="box what"><div class="label">What it does</div>
+      <p class="lead">Turns a question into a checked answer without letting the model touch the data. The model only translates the question into a query plan made of known filters and operations, and a second model call, the judge, checks that the plan fits the question before anything runs. The API adds the client, project and permissions, runs a parameterized read-only query on gold, and writes the answer from a template, so every number comes from the database. The model may then reword the text; the reword is shown only if its numbers, survey years and section identifiers are unchanged.</p></div>
+    <div class="box why"><div class="label">Why this option</div>
+      <p>Language models read questions and write text well, but they are unreliable at arithmetic over many rows and can state a wrong average or count with full confidence. Query plans keep answers exact and traceable while covering many forms of a question. A wrong model-written query is hard to detect and gives a confident wrong answer, and sending rows to the model sends more client data than needed.</p></div>
+  </div>
+
+  <h3>Context</h3>
+  <ul>
+    <li>UC-01 to UC-04: answers come from the client's PCI data. Each answer gives the source rows and states the threshold, years and filters used. No charts.</li>
+    <li>Answers must be grounded: every statement and every number in an answer traces back to PCI rows in the platform. Accuracy and security come first.</li>
+    <li>The model is reached only through the platform's interface and has no access to the database (ADR 5). Client data are isolated with row-level security (ADR 3).</li>
+    <li>Constraint: language model processing stays in the US.</li>
+    <li>This ADR replaces the validated query plans ADR. It keeps query plans built from blocks and changes three points: what happens when the judge rejects a plan; how numbers in the answer text are checked; and how long the answer log is kept.</li>
+    <li>Attributes involved: data traceability (high), security (high), deployability and simplicity (high), usability (medium), maintainability (medium), performance (medium).</li>
+  </ul>
+
+  <h3>Options</h3>
+  <h4>Turning a question into data</h4>
+  <table class="opts">
+    <thead><tr><th>Option</th><th>Notes from the ADR</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td>1. Fixed prepared queries</td><td>One per question type in UC-01 to UC-04. Safe and exact, but any variation outside the fixed queries cannot be answered.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>2. Query plans built from blocks</td><td>The model fills in a structured request (a query plan) by combining filters and operations; the API application validates it and turns it into a parameterized database query.</td><td><span class="chip ok">Chosen</span></td></tr>
+      <tr><td>3. The model writes the database query (SQL)</td><td>The API application runs it read-only. Answers almost any question, but a wrong query is hard to detect and gives a confident wrong answer.</td><td><span class="chip no">Not in first release</span></td></tr>
+      <tr><td>4. Send all of a project's rows to the model</td><td>Unreliable numbers, more client data sent than needed, and slower and costlier as data grow.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>5. Vector search over rows</td><td>Classic retrieval for documents. A poor fit for filters, counts and averages; it is the tool for PDFs later.</td><td><span class="chip no">Not chosen</span></td></tr>
+    </tbody>
+  </table>
+  <h4>Writing the answer text</h4>
+  <table class="opts">
+    <thead><tr><th>Option</th><th>Notes from the ADR</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td>A. The model writes the text from the result rows; the API checks the numbers</td><td>The approach of the replaced ADR. Readable, but the result rows go to the model, and the check cannot tell whether a correct number is attached to the right survey year or section.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>B. The API writes the text from templates</td><td>One template per operation. Exact, and no PCI data go to the model for the answer. The wording is fixed.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>C. B, then the model rewords the template text</td><td>The model receives the question and the template text, never the result rows. The API accepts the reworded text only if it keeps the same numbers, survey years and section identifiers, in the same order.</td><td><span class="chip ok">Chosen</span></td></tr>
+    </tbody>
+  </table>
+  <h4>When the judge rejects a plan</h4>
+  <table class="opts">
+    <thead><tr><th>Option</th><th>Notes from the ADR</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td>Answer anyway, with a warning</td><td>The user may get an answer that does not fit the question.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>Stop at the first rejection</td><td>Safe, but one wrong plan ends the question.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>Build a new plan with the judge's reason</td><td>Up to a fixed number of plans, then stop.</td><td><span class="chip ok">Chosen</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Decision</h3>
+  <p>Option 2 for turning a question into data, option C for the answer text, and a new plan after each rejection, up to three plans in total.</p>
+  <h4>Building blocks of a query plan (initial set, from UC-01 to UC-04)</h4>
+  <table class="tight">
+    <tbody>
+      <tr><td style="width:16%"><strong>Filters</strong></td><td>Survey year or range of years; PCI above, below or between values; specific sections; distance from a point (UC-04); project or whole network.</td></tr>
+      <tr><td><strong>Operations</strong></td><td>List; latest value per section; change between surveys; count; average (by section count, UC-03); compare two years or two groups.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>How a question is answered</h4>
+  <ol>
+    <li>The model turns the question into a query plan made of these blocks, or states that the question cannot be answered with them.</li>
+    <li>The API application validates the plan: allowed operations and fields only, PCI between 0 and 100, years present in the data, valid section identifiers and coordinates.</li>
+    <li>A second model call, the judge, checks whether the plan answers the question asked. It receives the question and the plan, never PCI rows. It does not check numbers.</li>
+    <li>If the judge rejects the plan, the model builds a new plan using the judge's reason, and steps 2 and 3 run again. After the third rejected plan, the user is told that the question cannot be answered yet, and the question, every plan and every verdict are logged.</li>
+    <li>The API application adds the client, the project and the user's permissions itself. These never come from the model. Row-level security enforces them again in the database.</li>
+    <li>The database runs the parameterized query with read-only access and a row limit. The values in the plan (for example, 55 or 2024) travel as parameters, never as code, so code cannot be injected.</li>
+    <li>The API application writes the answer text with the template for the plan's operation. Every number, survey year, PCI threshold and section identifier in the text comes from the query results or the validated plan. The template also carries the statements UC-01 to UC-04 require, such as the threshold and years used and, for averages, that they are by section count (UC-03).</li>
+    <li>The model rewords that text for readability. It receives the question and the template text, never the result rows. The API application accepts the reworded text only if it contains the same numbers, survey years and section identifiers as the template text, in the same order. Otherwise the user gets the template text, and the mismatch is logged.</li>
+    <li>The user receives the answer text, the plan stated in plain words (threshold, years, filters) and the source rows.</li>
+    <li>The question, every plan and judge verdict, the query, the results, the template text, the reworded text and the check result are logged with the user and time.</li>
+  </ol>
+
+  <h4>Further rules</h4>
+  <ul>
+    <li>If no plan fits (step 1), the answer says the question cannot be answered yet, and the question is logged. The logs show which blocks to add next.</li>
+    <li>[assumption] A plan that fails validation in step 2 counts as a rejected plan, with the validation error as the reason.</li>
+    <li>The judge runs on every answer.</li>
+    <li>Each operation has one template. A new operation needs a new template, covered by the test set.</li>
+    <li>Answer log entries are kept for a retention period, then deleted by the retention job (ADR 7). The period is set with each client.</li>
+    <li>Model-written queries (option 3) are not in the first release. They are reconsidered in a new ADR only if the logs show questions the blocks cannot express. If allowed then, they need read-only access, approved tables only, row limits and judge review.</li>
+  </ul>
+
+  <h3>Attributes</h3>
+  <table class="attr">
+    <thead><tr><th class="gain">Gained</th><th class="cost">Sacrificed</th></tr></thead>
+    <tbody><tr>
+      <td><ul>
+        <li><strong>Data traceability (high):</strong> every number in an answer comes from the query results or the validated plan through a template, and a reworded text that changes a number, year or section is not shown. Every answer links to its plans, judge verdicts, query and rows in the log.</li>
+        <li><strong>Security (high):</strong> the model never writes code and never reaches the database. Parameters rule out code injection. Client, project and permissions come from the API application and are enforced again by row-level security. The model never receives result rows; it receives the question, the plans and the template text.</li>
+        <li><strong>Usability (medium):</strong> combinable blocks cover filters, thresholds and comparisons in many forms, and users see how their question was interpreted, so they can check it. The reworded text reads naturally when it passes the check. A plan the judge keeps rejecting ends in "cannot answer yet", not in a doubtful answer.</li>
+        <li><strong>Maintainability (medium):</strong> a new kind of question means a new block and a new template, found through the logs and covered by the test set. Rejected plans in the log show where the planner needs work.</li>
+      </ul></td>
+      <td><ul>
+        <li><strong>Performance (medium):</strong> an answered question takes at least three model calls (plan, judge, reword) and up to seven when the judge rejects plans (three plans, three verdicts, one reword).</li>
+        <li><strong>Deployability and simplicity (high), partly:</strong> the plan format, validation, the judge with new plans, the templates and the reword check are more to build than fixed queries.</li>
+        <li><strong>Security (high), partly:</strong> the template text sent for rewording contains the answer's figures and section identifiers. Only the full result rows stay in the platform.</li>
+        <li><strong>Usability (medium), partly:</strong> questions the blocks cannot express, and questions whose plans are rejected three times, get "cannot answer yet" until a block is added or the planner improves. When a reword fails the check, the user reads the fixed template wording.</li>
+        <li><strong>Data traceability (high), partly:</strong> answer log entries are deleted after the retention period, so an older answer cannot be shown again exactly. Loads and corrections keep their full history (ADR 7).</li>
+      </ul></td>
+    </tr></tbody>
+  </table>
+
+  <h3>Consequences</h3>
+  <ul>
+    <li>C2: the language model description and the API application to language model relationship state the plan, judge and reword steps, and that the model receives no result rows and has no access to the database.</li>
+    <li>C3 view 3: the question answering module contains the query planner (up to three plans), the judge, the query builder, the answer writer (templates and reword check) and the language model interface. The answer log goes to the audit module.</li>
+    <li>The language model interface (ADR 5) has three operations: build a query plan, judge a plan, and reword a template text.</li>
+    <li>The test set from ADR 5 is extended: each test question has its expected plan, its expected numbers and its expected template text. Each test run also reports how often the judge rejects a correct plan and how often a reword fails the check.</li>
+    <li>The logs hold client data (questions, results and template text). They are stored in the platform database under row-level security, in the US, and deleted after the retention period.</li>
+    <li>An answered question costs three to seven model calls, instead of two or three in the replaced ADR. The price depends on the model chosen.</li>
+  </ul>
+</div>

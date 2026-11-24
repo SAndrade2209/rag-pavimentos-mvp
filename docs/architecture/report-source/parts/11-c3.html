@@ -1,0 +1,172 @@
+<div class="sec">
+  <div class="kicker">Part IV. Components</div>
+  <h1 id="c3" data-toc="1" data-part="Part IV. Components and cross-cutting views">10. C3 Components: inside the API application</h1>
+  <p>C3 opens the API application. ADR 7 splits it into seven modules by business area; each module owns its tables, and other modules use it only through its interface. Three focused views show the components: requests and access, loading and data layers, and question answering. Components that appear in more than one view are described in full in one view only.</p>
+
+  <h2 id="c3-modules" data-toc="2" data-short="10.1 Modules and components">10.1 Modules and components</h2>
+  <table>
+    <thead><tr><th style="width:16%">Module</th><th style="width:21%">Components</th><th>What it does</th><th style="width:11%">Use cases</th><th style="width:19%">Data access</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip m-access">Access</span></td><td>Access guard; access management</td><td>Checks every request and denies by default; grants and removes project access and permissions.</td><td>UC-07, UC-08</td><td>Reads users, clients and permissions; writes access and permissions (platform tables)</td></tr>
+      <tr><td><span class="chip m-projects">Projects</span></td><td>Projects</td><td>Project list and workspace, limited to the projects granted to the user.</td><td>UC-06, UC-07</td><td>Reads projects (platform tables)</td></tr>
+      <tr><td><span class="chip m-views">Views</span></td><td>Project and section views</td><td>Project overview (latest PCI by section) and section view (PCI by survey year, survey timeline).</td><td>UC-06</td><td>Reads gold</td></tr>
+      <tr><td><span class="chip m-loading">Loading</span></td><td>Load jobs; input adapters; validation and load summary; retention job</td><td>Runs loads as background jobs, reads each source, validates rows into silver, and deletes expired original files.</td><td>UC-05</td><td>Writes file storage and bronze; reads bronze; writes silver</td></tr>
+      <tr><td><span class="chip m-pci">PCI data</span></td><td>Corrections; gold refresh</td><td>Corrects or deletes PCI values as new versions; rebuilds gold with each load or correction.</td><td>UC-09; every load</td><td>Writes silver; reads silver; rebuilds gold</td></tr>
+      <tr><td><span class="chip m-qa">Question answering</span></td><td>Query planner; judge; query builder; answer writer; language model interface</td><td>Turns questions into judged query plans, runs read-only queries on gold, writes answers from templates.</td><td>UC-01 to UC-04</td><td>Read-only access to gold</td></tr>
+      <tr><td><span class="chip m-audit">Audit</span></td><td>Audit log</td><td>Records PCI data changes, access grants and removals, denied requests, load summaries and the answer log; deletes expired answer log entries.</td><td>All</td><td>Writes audit records (platform tables)</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Module boundaries are checked in code review and by simple automated checks, for example a test that fails if one module reads another module's tables (ADR 7). Secrets for the language model, the identity service and the agency connection come from the cloud provider's secret manager, injected as settings when the application starts.</p>
+</div>
+
+<div class="sec">
+  <div class="figpage portrait">
+    <div class="kicker">C3 Components, view 1 of 3</div>
+    <h2 class="fig-h" id="c3-view1" data-toc="2" data-short="10.2 View 1: requests and access">10.2 View 1: requests and access</h2>
+    <figure>
+      <img src="../c4/styled/c3-1-requests-and-access.svg" alt="C3 view 1: requests and access">
+      <figcaption>Figure 3. Every request passes the access guard, which denies by default. Labels on its arrows give the use cases each module serves.</figcaption>
+      <div class="figsrc">Source: <code>docs/architecture/c4/styled/c3-components.puml</code> (view 1), styled copy of <code>docs/architecture/c4/c3-components.puml</code></div>
+    </figure>
+  </div>
+</div>
+
+<div class="sec">
+  <h3 id="c3-v1-flow" style="margin-top:0">How a request is handled</h3>
+  <ol>
+    <li>The web application sends every request to the access guard, as JSON over HTTPS.</li>
+    <li>The guard checks the sign-in token with the identity service (OpenID Connect).</li>
+    <li>It reads the user, the client and the project permissions from the platform tables, and sets the client for row-level security.</li>
+    <li>It denies by default. A request without the needed permission is refused, and the denial goes to the audit log.</li>
+    <li>A checked request goes to the module that serves it: access management (UC-08), projects (UC-06, UC-07), project and section views (UC-06), load jobs (UC-05), corrections (UC-09) or the query planner (UC-01 to UC-04).</li>
+    <li>The views read gold; projects read the platform tables; access management writes access and permissions and sends grants and removals to the audit log, which writes its records to the platform tables.</li>
+  </ol>
+  <p class="note">Allowed requests are not logged one by one (ADR 7).</p>
+
+  <h3 id="c3-v1-elements">Elements in view 1</h3>
+  <table class="tight">
+    <thead><tr><th style="width:24%">Element</th><th style="width:14%">Module or type</th><th>Description (source diagram)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Web application</strong></td><td>Container</td><td>Runs in the browser. Sends every request to the API application.</td></tr>
+      <tr><td><strong>Identity service</strong></td><td>External system</td><td>Hosted. Issues sign-in tokens (OpenID Connect).</td></tr>
+      <tr><td><strong>Access guard</strong></td><td><span class="chip m-access">Access</span></td><td>On every request: checks the sign-in token, resolves user and client, loads project permissions, sets the client for row-level security. Denies by default. UC-07.</td></tr>
+      <tr><td><strong>Access management</strong></td><td><span class="chip m-access">Access</span></td><td>Grants and removes project access and permissions. UC-08.</td></tr>
+      <tr><td><strong>Projects</strong></td><td><span class="chip m-projects">Projects</span></td><td>Project list and workspace, limited to the projects granted to the user. UC-06, UC-07.</td></tr>
+      <tr><td><strong>Project and section views</strong></td><td><span class="chip m-views">Views</span></td><td>Project overview (latest PCI by section) and section view (PCI by survey year, survey timeline). UC-06.</td></tr>
+      <tr><td><strong>Load jobs</strong></td><td><span class="chip m-loading">Loading</span></td><td>Entry point for loads. Detail in view 2.</td></tr>
+      <tr><td><strong>Corrections</strong></td><td><span class="chip m-pci">PCI data</span></td><td>Entry point for corrections. Detail in view 2.</td></tr>
+      <tr><td><strong>Query planner</strong></td><td><span class="chip m-qa">Question answering</span></td><td>Entry point for questions. Detail in view 3.</td></tr>
+      <tr><td><strong>Audit log</strong></td><td><span class="chip m-audit">Audit</span></td><td>Every module writes here: PCI data changes, project access grants and removals, denied requests, load summaries, and the answer log (question, plans, judge verdicts, query, results, template and reworded text, check result). Answer log entries are deleted when their retention period ends.</td></tr>
+      <tr><td><strong>Platform tables</strong></td><td><span class="chip d-tables">Database</span></td><td>Users, clients, projects, permissions, load jobs, audit log.</td></tr>
+      <tr><td><strong>Gold schema</strong></td><td><span class="chip d-gold">Database</span></td><td>Serving tables: latest PCI per section, PCI by survey year, project overview, network summaries.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="landscape">
+  <div class="figpage">
+    <div class="kicker">C3 Components, view 2 of 3</div>
+    <h2 class="fig-h" id="c3-view2" data-toc="2" data-short="10.3 View 2: loading and data layers">10.3 View 2: loading and data layers</h2>
+    <figure>
+      <img src="../c4/styled/c3-2-loading-and-data-layers.svg" alt="C3 view 2: loading and data layers">
+      <figcaption>Figure 4. Numbers give the order of a load, left to right. Colors show each component's module; bronze, silver and gold are schemas of the platform database, all under row-level security. Pink arrows show a correction; dotted arrows show the scheduled retention job.</figcaption>
+      <div class="figsrc">Source: <code>docs/architecture/c4/styled/c3-components.puml</code> (view 2), styled copy of <code>docs/architecture/c4/c3-components.puml</code></div>
+    </figure>
+  </div>
+</div>
+
+<div class="sec">
+  <h3 id="c3-v2-flow" style="margin-top:0">A load, step by step</h3>
+  <table class="tight">
+    <thead><tr><th class="c" style="width:6%">Step</th><th style="width:30%">From and to</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td>Access guard to load jobs</td><td>A checked load request (UC-05).</td></tr>
+      <tr><td class="c">2</td><td>Load jobs to input adapters</td><td>Runs the load as a retryable background job in the same process, tracked in a job table. Running a load again does not duplicate rows.</td></tr>
+      <tr><td class="c">3</td><td>Input adapters to file storage, or to the client pavement management system</td><td>For an upload, stores the original file. For the funding agency, reads through the automatic connection (method pending).</td></tr>
+      <tr><td class="c">4</td><td>Input adapters to bronze</td><td>Writes the raw rows with the load record (who, when, source), read with the column mapping saved per client.</td></tr>
+      <tr><td class="c">5</td><td>Load jobs to validation and load summary</td><td>Starts the validation of the load.</td></tr>
+      <tr><td class="c">6</td><td>Validation to bronze</td><td>Reads the raw rows.</td></tr>
+      <tr><td class="c">7</td><td>Validation to silver</td><td>Writes validated PCI after the UC-05 checks, and records conflicts with the existing and the new value.</td></tr>
+      <tr><td class="c">8</td><td>Validation to gold refresh</td><td>Triggers the refresh.</td></tr>
+      <tr><td class="c">9</td><td>Gold refresh to silver</td><td>Reads the current versions.</td></tr>
+      <tr><td class="c">10</td><td>Gold refresh to gold</td><td>Rebuilds the client's serving tables, in the same database transaction as the load.</td></tr>
+      <tr><td class="c">11</td><td>Validation to audit log</td><td>Load summary: rows added, conflicts, and rejected rows with the reason.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid2">
+    <div class="box why"><div class="label">A correction (pink arrows, UC-09)</div>
+      <ul>
+        <li>The guard passes a checked correction request to corrections.</li>
+        <li>Corrections writes a new version in silver, with who, when and why, or resolves a load conflict.</li>
+        <li>It triggers the gold refresh, in the same transaction.</li>
+        <li>It sends the change, with who, when and why, to the audit log.</li>
+      </ul></div>
+    <div class="box why"><div class="label">Retention (dotted arrows)</div>
+      <ul>
+        <li>The retention job is scheduled and runs in the same process.</li>
+        <li>It deletes original files from file storage when their retention period ends.</li>
+        <li>It asks the audit module to delete expired answer log entries, so each module deletes only its own records.</li>
+      </ul></div>
+  </div>
+
+  <h3 id="c3-v2-layers">Data layers</h3>
+  <table class="tight">
+    <thead><tr><th style="width:13%">Layer</th><th>Holds</th><th style="width:16%">Written by</th><th style="width:15%">Read by</th><th style="width:21%">Kept</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip d-bronze">Bronze</span></td><td>Every load exactly as received, with who loaded it, when, and the source file or connection run.</td><td>Input adapters</td><td>Validation</td><td>Kept. Never changed.</td></tr>
+      <tr><td><span class="chip d-silver">Silver</span></td><td>Validated PCI per network section and survey year. Corrections and deletions as new versions with who, when and why. Conflicts.</td><td>Validation; corrections</td><td>Gold refresh</td><td>Kept, with every version.</td></tr>
+      <tr><td><span class="chip d-gold">Gold</span></td><td>Serving tables: latest PCI per section, PCI by survey year, project overview, network summaries.</td><td>Gold refresh</td><td>Views; query builder</td><td>Rebuilt from silver with each load or correction.</td></tr>
+      <tr><td><span class="chip c-files">File storage</span></td><td>Original uploaded files, as evidence of each load. Later, PDFs.</td><td>Input adapters</td><td>API application (C2)</td><td>Retention period, then deleted by the retention job.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="landscape">
+  <div class="figpage">
+    <div class="kicker">C3 Components, view 3 of 3</div>
+    <h2 class="fig-h" id="c3-view3" data-toc="2" data-short="10.4 View 3: question answering">10.4 View 3: question answering</h2>
+    <figure>
+      <img src="../c4/styled/c3-3-question-answering.svg" alt="C3 view 3: question answering">
+      <figcaption>Figure 5. Numbers give the order of the steps for one question. The model is reached only through the language model interface.</figcaption>
+      <div class="figsrc">Source: <code>docs/architecture/c4/styled/c3-components.puml</code> (view 3), styled copy of <code>docs/architecture/c4/c3-components.puml</code></div>
+    </figure>
+  </div>
+</div>
+
+<div class="sec">
+  <h3 id="c3-v3-flow" style="margin-top:0">A question, step by step</h3>
+  <table class="tight">
+    <thead><tr><th class="c" style="width:6%">Step</th><th style="width:30%">From and to</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td>Access guard to query planner</td><td>A checked question, with the client, project and permissions (UC-01 to UC-04).</td></tr>
+      <tr><td class="c">2</td><td>Query planner to language model interface</td><td>Asks the model for a query plan built from filters and operations, then validates it.</td></tr>
+      <tr><td class="c">3</td><td>Query planner to judge</td><td>Asks for a verdict on each validated plan.</td></tr>
+      <tr><td class="c">4</td><td>Judge to language model interface</td><td>The model judges whether the plan answers the question, before the query runs. It receives the question and the plan, never result rows. If the judge rejects the plan, the planner asks for a new one with the judge's reason, up to three plans; after that, the question cannot be answered yet.</td></tr>
+      <tr><td class="c">5</td><td>Query planner to query builder</td><td>The plan accepted by the judge.</td></tr>
+      <tr><td class="c">6</td><td>Query builder to gold</td><td>A parameterized, read-only query, with the client, project and permissions from the access guard.</td></tr>
+      <tr><td class="c">7</td><td>Query builder to answer writer</td><td>The query and its results.</td></tr>
+      <tr><td class="c">8</td><td>Answer writer to language model interface</td><td>Writes the answer text with the template for the plan's operation, asks the model to reword it, and keeps the reword only if its numbers, survey years and section identifiers match the template text, in the same order.</td></tr>
+      <tr><td class="c">Log</td><td>Query planner and answer writer to audit log</td><td>The question, plans and verdicts; then the query, results, texts and check result. Kept for a retention period.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="c3-v3-model">What reaches the language model</h3>
+  <table class="tight">
+    <thead><tr><th style="width:50%">The model receives</th><th>The model never receives or does</th></tr></thead>
+    <tbody><tr>
+      <td><ul>
+        <li>The question.</li>
+        <li>Query plans, to build and to judge.</li>
+        <li>The template text to reword, which holds the answer's figures and section identifiers.</li>
+      </ul></td>
+      <td><ul>
+        <li>Result rows.</li>
+        <li>Access to the database.</li>
+        <li>The client, project or permissions: the API adds them.</li>
+        <li>Writing SQL: model-written queries are not in the first release.</li>
+      </ul></td>
+    </tr></tbody>
+  </table>
+  <p>An answered question takes three model calls (plan, judge, reword) and up to seven when the judge rejects plans (three plans, three verdicts, one reword). The building blocks of the query plans and the validation rules are in ADR 6 (8.6).</p>
+</div>

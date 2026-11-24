@@ -1,0 +1,59 @@
+<div class="sec">
+  <h1 id="crosscutting" data-toc="1">11. Cross-cutting views</h1>
+  <p>Some properties come from several decisions at once. These tables collect them in one place, each row with the ADR or document it comes from.</p>
+
+  <h2 id="cc-security" data-toc="2" data-short="11.1 Security, layer by layer">11.1 Security, layer by layer</h2>
+  <table class="tight">
+    <thead><tr><th style="width:21%">Layer</th><th>What it does</th><th style="width:17%">Source</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Identity service</strong></td><td>Signs users in with MFA (platform accounts), single sign-on, or Google Workspace with two-step verification. The platform stores no passwords and accepts only signed tokens. For single sign-on users, MFA is enforced by the client's own identity provider.</td><td>ADR 2; UC-07</td></tr>
+      <tr><td><strong>Access guard</strong></td><td>On every request: checks the token, resolves user and client, loads project permissions, sets the client for row-level security and denies by default. A user without any project cannot sign in.</td><td>ADR 7; UC-07</td></tr>
+      <tr><td><strong>Per-project permissions</strong></td><td>View, Load, Correct and delete, Manage access, granted per project. [assumption] The levels are an assumption in the use cases.</td><td>Use cases; UC-08</td></tr>
+      <tr><td><strong>Row-level security</strong></td><td>The database returns only the requesting client's rows, on every schema. The API also filters by client. Cross-client isolation tests are in the minimum automated test set.</td><td>ADR 3; ADR 7</td></tr>
+      <tr><td><strong>Read-only answering</strong></td><td>The question answering module has read-only database access, to gold only, with a row limit.</td><td>ADR 6; ADR 7</td></tr>
+      <tr><td><strong>Parameters, not code</strong></td><td>Plan values travel as parameters, never as code. Model-written queries are not in the first release.</td><td>ADR 6</td></tr>
+      <tr><td><strong>Model boundary</strong></td><td>One interface is the only way to reach the model. The model never reaches the database and never receives result rows; it receives the question, plans and template text.</td><td>ADR 5; ADR 6</td></tr>
+      <tr><td><strong>Secrets</strong></td><td>Keys for the language model, identity service and agency connection come from the cloud provider's secret manager, injected as settings when the application starts.</td><td>ADR 7</td></tr>
+      <tr><td><strong>Agency connection</strong></td><td>Read-only access limited to PCI data; credentials outside the code; traffic and processing in the US.</td><td>ADR 4</td></tr>
+      <tr><td><strong>Audit log</strong></td><td>PCI data changes, access grants and removals, denied requests, load summaries and the answer log. Allowed requests are not logged one by one.</td><td>ADR 7</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="cc-kept" data-toc="2" data-short="11.2 What is kept, and for how long">11.2 What is kept, and for how long</h2>
+  <table class="tight">
+    <thead><tr><th style="width:30%">Record</th><th style="width:18%">Where</th><th>Kept</th><th style="width:14%">Source</th></tr></thead>
+    <tbody>
+      <tr><td>Raw rows of every load, with who, when and source</td><td>Bronze</td><td>Kept; never changed.</td><td>ADR 7</td></tr>
+      <tr><td>Validated PCI per network section and survey year, with every version and who, when and why</td><td>Silver</td><td>Kept; the network's PCI history.</td><td>ADR 7; UC-05; UC-09</td></tr>
+      <tr><td>Serving tables for views and answers</td><td>Gold</td><td>Rebuilt from silver with each load or correction.</td><td>ADR 7</td></tr>
+      <tr><td>Original uploaded files</td><td>File storage</td><td>For a retention period set with each client, then deleted by the retention job. Bronze keeps their rows.</td><td>ADR 7</td></tr>
+      <tr><td>Answer log: question, plans, verdicts, query, results, template and reworded text, check result</td><td>Platform database, under row-level security</td><td>For a retention period set with each client, then deleted.</td><td>ADR 6; ADR 7</td></tr>
+      <tr><td>Audit records: PCI data changes, access grants and removals, denied requests, load summaries</td><td>Platform tables</td><td>Kept; retention periods apply only to original files and answer log entries.</td><td>ADR 7</td></tr>
+      <tr><td>Backups of the database and files</td><td>Separate US location</td><td>Minimum: automatic daily backups, with a restore tested.</td><td>Quality attributes</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Not built: reproducing what the platform showed on a past date ("time travel"), ADR 7.</p>
+
+  <h2 id="cc-us" data-toc="2" data-short="11.3 Data in the US">11.3 Data in the US</h2>
+  <table class="tight">
+    <thead><tr><th style="width:30%">Item</th><th>Rule</th><th style="width:20%">Source</th></tr></thead>
+    <tbody>
+      <tr><td>Platform database and backups</td><td>Data and backups stay in the US. All clients share one database in the US.</td><td>CLAUDE.md; ADR 3</td></tr>
+      <tr><td>Language model processing</td><td>Every model adapter uses an endpoint that processes data in the US.</td><td>ADR 5</td></tr>
+      <tr><td>Identity service</td><td>The chosen service must keep user data in the US.</td><td>ADR 2</td></tr>
+      <tr><td>Agency connection</td><td>Traffic and processing inside the US.</td><td>ADR 4</td></tr>
+      <tr><td>Answer logs</td><td>Stored in the platform database, under row-level security, in the US.</td><td>ADR 6</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="cc-portability" data-toc="2" data-short="11.4 Portability across cloud providers">11.4 Portability across cloud providers</h2>
+  <table class="tight">
+    <thead><tr><th style="width:30%">Item</th><th>How it stays portable</th><th style="width:20%">Source</th></tr></thead>
+    <tbody>
+      <tr><td>Containers</td><td>All technology candidates run on any cloud provider or on premises.</td><td>C2 source diagram</td></tr>
+      <tr><td>Sign-in</td><td>OpenID Connect; the identity services of cloud providers themselves are excluded because they tie the platform to one provider.</td><td>ADR 2</td></tr>
+      <tr><td>Secrets</td><td>The code reads settings only and never calls the provider's secret manager directly, so changing providers changes the deployment setup, not the code.</td><td>ADR 7</td></tr>
+      <tr><td>Language model</td><td>Model and endpoint set in configuration; one adapter per model option.</td><td>ADR 5</td></tr>
+    </tbody>
+  </table>
+</div>

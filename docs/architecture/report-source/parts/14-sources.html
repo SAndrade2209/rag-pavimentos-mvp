@@ -1,0 +1,27 @@
+<div class="sec">
+  <h1 id="sources" data-toc="1">Appendix B. Source documents</h1>
+  <p>Everything in this report comes from the repository <code>rag-pavimentos-mvp</code> at commit 19204b0 (2026-11-23). Diagrams were rendered with PlantUML 1.2026.10 and its bundled C4-PlantUML 2.14.0; the renders match the SVG files committed in <code>docs/architecture/c4/styled/</code>.</p>
+  <table class="tight">
+    <thead><tr><th style="width:26%">Document</th><th>Path</th></tr></thead>
+    <tbody>
+      <tr><td>Project instructions</td><td><code>CLAUDE.md</code></td></tr>
+      <tr><td>Repository overview and scope</td><td><code>README.md</code></td></tr>
+      <tr><td>Use cases</td><td><code>docs/use-cases/README.md</code>; <code>docs/use-cases/uc-01-mr-candidates.md</code> to <code>uc-09-correct-or-delete-pci-data.md</code></td></tr>
+      <tr><td>Quality attributes</td><td><code>docs/architecture/quality-attributes.md</code></td></tr>
+      <tr><td>C4 diagrams, source of truth</td><td><code>docs/architecture/c4/c1-context.puml</code>; <code>c2-containers.puml</code>; <code>c3-components.puml</code></td></tr>
+      <tr><td>C4 diagrams, styled copies shown here</td><td><code>docs/architecture/c4/styled/</code>: <code>c1-context.puml</code>, <code>c2-containers.puml</code>, <code>c3-components.puml</code>, <code>style.puml</code> and the SVG renders</td></tr>
+      <tr class="group"><td colspan="2">Accepted ADRs, in the reading order of this report</td></tr>
+      <tr><td>ADR 1</td><td><code>docs/architecture/adr/2026-11-20-use-c4-model.md</code></td></tr>
+      <tr><td>ADR 2</td><td><code>docs/architecture/adr/2026-11-23-delegate-sign-in-to-an-identity-service.md</code></td></tr>
+      <tr><td>ADR 3</td><td><code>docs/architecture/adr/2026-11-23-isolate-client-data-with-row-level-security.md</code></td></tr>
+      <tr><td>ADR 4</td><td><code>docs/architecture/adr/2026-11-23-load-pci-data-by-upload-and-connection.md</code></td></tr>
+      <tr><td>ADR 5</td><td><code>docs/architecture/adr/2026-11-23-language-model-behind-replaceable-interface.md</code></td></tr>
+      <tr><td>ADR 6</td><td><code>docs/architecture/adr/2026-11-23-ground-answers-with-judged-plans-and-answer-templates.md</code></td></tr>
+      <tr><td>ADR 7</td><td><code>docs/architecture/adr/2026-11-23-backend-modular-monolith-with-data-layers-and-retention.md</code></td></tr>
+      <tr class="group"><td colspan="2">Superseded ADRs</td></tr>
+      <tr><td>Replaced by ADR 6</td><td><code>docs/architecture/adr/2026-11-23-ground-answers-with-validated-query-plans.md</code></td></tr>
+      <tr><td>Replaced by ADR 7</td><td><code>docs/architecture/adr/2026-11-23-backend-modular-monolith-with-data-layers.md</code></td></tr>
+    </tbody>
+  </table>
+  <p class="note">The ADR numbers 1 to 7 are the reading order used in this report. In the repository, ADRs are identified by their file names.</p>
+</div>

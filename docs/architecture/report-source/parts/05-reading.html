@@ -1,0 +1,77 @@
+<div class="sec">
+  <div class="kicker">Part II. Context and containers</div>
+  <h1 id="reading" data-toc="1" data-part="Part II. Context and containers">4. How to read the diagrams</h1>
+
+  <p>The architecture is described with the C4 model at three levels (ADR 1). Each level zooms into one box of the level above.</p>
+  <table>
+    <thead><tr><th style="width:17%">Level</th><th>Shows</th><th style="width:22%">Audience</th><th style="width:10%">Section</th></tr></thead>
+    <tbody>
+      <tr><td><strong>C1 System context</strong></td><td>The platform as one box, the people who use it and the external systems it depends on.</td><td>Everyone, including non-technical stakeholders</td><td>5</td></tr>
+      <tr><td><strong>C2 Containers</strong></td><td>The applications and data stores inside the platform, with candidate technologies and the protocols between them.</td><td>Technical team</td><td>6</td></tr>
+      <tr><td><strong>C3 Components</strong></td><td>The modules and components inside the API application, in three focused views.</td><td>Technical team</td><td>10</td></tr>
+      <tr><td><strong>Level 4 (code)</strong></td><td>Not produced; generated from the code if ever needed.</td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <p>The diagrams are written as code in PlantUML with the C4-PlantUML library, kept in Git and reviewed in pull requests. This report shows the <strong>styled copies</strong> in <code>docs/architecture/c4/styled/</code>. They have the same elements and relationships as the diagrams in <code>docs/architecture/c4/</code>, which stay the source of truth, with shorter text, colors and icons. The tables in this report use the full descriptions from the source diagrams.</p>
+
+  <h2 id="legend">4.1 Legend</h2>
+  <table class="tight legend-t">
+    <thead><tr><th style="width:16%">Mark</th><th style="width:34%">Meaning</th><th style="width:16%">Mark</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr class="group"><td colspan="4">People and systems (C1, C2)</td></tr>
+      <tr>
+        <td><span class="sw" style="background:#0F766E;border-color:#115E59"></span></td><td>Person who uses PCI data</td>
+        <td><span class="sw" style="background:#4338CA;border-color:#3730A3"></span></td><td>Person who manages project access</td>
+      </tr>
+      <tr>
+        <td><span class="sw" style="background:#1E40AF;border-color:#1E3A8A"></span></td><td>The pavement data platform (C1)</td>
+        <td><span class="sw" style="background:#F8FAFC;border-color:#94A3B8"></span></td><td>External system</td>
+      </tr>
+      <tr>
+        <td><span class="sw" style="background:#ECFDF5;border-color:#059669"></span></td><td>Web application</td>
+        <td><span class="sw" style="background:#DBEAFE;border-color:#2563EB"></span></td><td>API application</td>
+      </tr>
+      <tr>
+        <td><span class="sw" style="background:#EDE9FE;border-color:#7C3AED;border-style:dashed"></span></td><td>Language model: hosted or self-hosted, decision pending</td>
+        <td><span class="sw" style="background:#E0F2FE;border-color:#0369A1"></span> <span class="sw" style="background:#F5F5F4;border-color:#78716C"></span></td><td>Platform database; file storage</td>
+      </tr>
+      <tr class="group"><td colspan="4">Modules of the API application (C3)</td></tr>
+      <tr>
+        <td><span class="chip m-access">Access</span></td><td>Access guard, access management</td>
+        <td><span class="chip m-projects">Projects</span></td><td>Project list and workspace</td>
+      </tr>
+      <tr>
+        <td><span class="chip m-views">Views</span></td><td>Project overview and section view</td>
+        <td><span class="chip m-loading">Loading</span></td><td>Load jobs, input adapters, validation, retention job</td>
+      </tr>
+      <tr>
+        <td><span class="chip m-pci">PCI data</span></td><td>Corrections, gold refresh</td>
+        <td><span class="chip m-qa">Question answering</span></td><td>Planner, judge, query builder, answer writer, model interface</td>
+      </tr>
+      <tr>
+        <td><span class="chip m-audit">Audit</span></td><td>Audit log</td>
+        <td></td><td></td>
+      </tr>
+      <tr class="group"><td colspan="4">Platform database contents (C3)</td></tr>
+      <tr>
+        <td><span class="chip d-bronze">Bronze</span></td><td>Loads exactly as received</td>
+        <td><span class="chip d-silver">Silver</span></td><td>Validated PCI with versions</td>
+      </tr>
+      <tr>
+        <td><span class="chip d-gold">Gold</span></td><td>Serving tables for views and answers</td>
+        <td><span class="chip d-tables">Platform tables</span></td><td>Users, clients, projects, permissions, load jobs, audit log</td>
+      </tr>
+      <tr class="group"><td colspan="4">Lines</td></tr>
+      <tr>
+        <td><span class="ln dash"></span></td><td>Method pending (ADR)</td>
+        <td><span class="ln pink"></span></td><td>Correction (UC-09)</td>
+      </tr>
+      <tr>
+        <td><span class="ln dot"></span></td><td>Scheduled retention job</td>
+        <td><strong>1, 2, 3</strong></td><td>Numbers on arrows give the order of the steps</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">Use case IDs appear under each person in C1 and C2, and on the arrows from the access guard in C3.</p>
+</div>

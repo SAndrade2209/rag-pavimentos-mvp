@@ -1,0 +1,46 @@
+<div class="sec">
+  <h1 id="summary" data-toc="1" data-part="Overview">Summary</h1>
+
+  <p>The MVP is a pavement data platform for agencies and airports that manage airport or road networks. Users ask natural-language questions about tabular PCI data (section, coordinates, PCI, survey year) and view PCI in project and section views. PCI data belong to the network and are kept for every survey year; a project is how data arrive and where they are shown. Several clients share the platform, each with isolated data.</p>
+
+  <div class="box">
+    <div class="label">Architecture at a glance</div>
+    <ul>
+      <li><strong>Two applications:</strong> a web application in the browser and one API application, a modular monolith with seven modules.</li>
+      <li><strong>One platform database</strong> with three data layers: bronze (loads as received), silver (validated PCI with every version) and gold (serving tables), all under row-level security by client.</li>
+      <li><strong>File storage</strong> for the original uploaded files, kept for a retention period.</li>
+      <li><strong>A language model reached through one interface.</strong> It builds and judges query plans and rewords answer text, never receives result rows and never reaches the database. Hosted or self-hosted is pending.</li>
+      <li><strong>Sign-in through a hosted identity service</strong> (OpenID Connect, MFA, single sign-on, Google Workspace for Continuum staff). Projects and permissions stay in the platform.</li>
+      <li><strong>Two ways to load PCI data:</strong> CSV and Excel upload for every client, and an automatic connection to the funding agency's pavement management system (method pending).</li>
+    </ul>
+  </div>
+
+  <h2 id="summary-drivers">Drivers</h2>
+  <ul>
+    <li><strong>High-priority quality attributes:</strong> security; data traceability; deployability and simplicity; recoverability.</li>
+    <li><strong>Constraints:</strong> data, backups and language model processing stay in the US; the platform runs on any major cloud provider. An MVP that deploys fast, not sized for millions of users or multi-zone high availability.</li>
+  </ul>
+
+  <h2 id="summary-decisions">Decisions</h2>
+  <table class="tight">
+    <thead><tr><th class="c" style="width:7%">ADR</th><th>Decision</th><th style="width:13%">Status</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td>Document the architecture with the C4 model, as PlantUML diagrams kept in Git</td><td><span class="chip ok">Accepted</span></td></tr>
+      <tr><td class="c">2</td><td>Delegate sign-in to an identity service through OpenID Connect; authorization stays in the platform</td><td><span class="chip ok">Accepted</span></td></tr>
+      <tr><td class="c">3</td><td>Isolate client data in shared tables with row-level security</td><td><span class="chip ok">Accepted</span></td></tr>
+      <tr><td class="c">4</td><td>Load PCI data by CSV and Excel upload, plus an automatic connection for the funding agency</td><td><span class="chip ok">Accepted</span></td></tr>
+      <tr><td class="c">5</td><td>Put the language model behind a replaceable interface</td><td><span class="chip ok">Accepted</span></td></tr>
+      <tr><td class="c">6</td><td>Ground answers through judged query plans and answer templates</td><td><span class="chip ok">Accepted</span></td></tr>
+      <tr><td class="c">7</td><td>Structure the backend as a modular monolith with data layers and retention periods</td><td><span class="chip ok">Accepted</span></td></tr>
+    </tbody>
+  </table>
+  <p class="note">ADR numbers follow the reading order of Section 7.1. ADR 1 is dated 2026-11-20; ADRs 2 to 7 are dated 2026-11-23.</p>
+
+  <h2 id="summary-properties">Properties that follow from the decisions</h2>
+  <ul>
+    <li>Every number in an answer comes from database results through a template, not from the model (ADR 6).</li>
+    <li>One client never sees another client's data: API filtering plus row-level security in the database (ADR 3).</li>
+    <li>PCI values are never overwritten: a load conflict keeps the existing value, and a correction is a new version with who, when and why (ADR 7).</li>
+    <li>One deployable API application and one database for all clients, with no separate worker or queue (ADR 3; ADR 7).</li>
+  </ul>
+</div>

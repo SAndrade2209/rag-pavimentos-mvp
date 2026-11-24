@@ -1,0 +1,49 @@
+<div class="landscape">
+  <div class="figpage">
+    <h1 id="c1" data-toc="1">5. C1 System context</h1>
+    <figure>
+      <img src="../c4/styled/c1-context.svg" alt="C1 system context diagram of the pavement data platform MVP">
+      <figcaption>Figure 1. System context. Every person signs in through the identity service (UC-07). The dashed arrow is the automatic connection for the funding agency; its method is pending.</figcaption>
+      <div class="figsrc">Source: <code>docs/architecture/c4/styled/c1-context.puml</code>, styled copy of <code>docs/architecture/c4/c1-context.puml</code></div>
+    </figure>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="box">
+    <div class="label">Key points</div>
+    <ul>
+      <li>One system for all clients. Everyone signs in through the identity service (UC-07); what each person may do is decided inside the platform, per project.</li>
+      <li>PCI data enter by upload and, for the funding agency only, by an automatic connection (dashed: method pending, ADR 4). A hosted language model would appear here as an external system (note in <code>c2-containers.puml</code>).</li>
+    </ul>
+  </div>
+
+  <h2 id="c1-people">5.1 People</h2>
+  <table class="tight">
+    <thead><tr><th style="width:27%">Person</th><th>Role on the platform</th><th style="width:24%">Use cases</th></tr></thead>
+    <tbody>
+      <tr class="group"><td colspan="3">Use PCI data</td></tr>
+      <tr><td><strong>Airport pavement management staff</strong></td><td>Loads airfield PCI data, selects M&amp;R candidates, reports condition and plans inspections.</td><td>UC-01 to UC-07, UC-09</td></tr>
+      <tr><td><strong>Pavement management engineer</strong></td><td>Loads PCI data, selects M&amp;R candidates and reports network condition.</td><td>UC-01 to UC-03, UC-05 to UC-07, UC-09</td></tr>
+      <tr><td><strong>District/maintenance staff</strong></td><td>Selects M&amp;R candidates and plans inspections on assigned sections.</td><td>UC-01, UC-04, UC-06, UC-07</td></tr>
+      <tr><td><strong>Continuum consultant</strong></td><td>Secondary user. Loads client PCI data on the client's behalf and answers client requests.</td><td>UC-01, UC-02, UC-05 to UC-07, UC-09</td></tr>
+      <tr><td><strong>Client data administrator</strong></td><td>Separate client role that loads the client's PCI data files. The role name is a placeholder.</td><td>UC-05, UC-07, UC-09</td></tr>
+      <tr class="group"><td colspan="3">Manage project access</td></tr>
+      <tr><td><strong>Client manager</strong></td><td>Manager at the agency or airport. Grants and removes access to the client's projects.</td><td>UC-07, UC-08</td></tr>
+      <tr><td><strong>Project lead</strong></td><td>Person responsible for a project. Grants and removes access to that project.</td><td>UC-07, UC-08</td></tr>
+      <tr><td><strong>Continuum administrator</strong></td><td>Continuum staff. Sets up each client and its first client manager, and can grant project access.</td><td>UC-07, UC-08</td></tr>
+    </tbody>
+  </table>
+  <p class="note">[assumption] UC-06 actors, the scope of each access manager, and UC-09 for the users who load data are assumptions (2.2, 2.3).</p>
+
+  <h2 id="c1-external">5.2 External systems</h2>
+  <table class="tight">
+    <thead><tr><th style="width:21%">System</th><th style="width:38%">What it is</th><th>Relationship with the platform</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Identity service</strong></td><td>Hosted. Platform accounts with MFA, single sign-on with client identity providers, and Google sign-in for Continuum staff. User data kept in the US.</td><td>The platform delegates sign-in and accepts only signed sign-in tokens (OpenID Connect; UC-07; ADR 2).</td></tr>
+      <tr><td><strong>Client identity provider</strong></td><td>The client organization's own account system. Only for clients that require single sign-on.</td><td>The identity service signs in client staff with their organization's account (single sign-on; UC-07; ADR 2).</td></tr>
+      <tr><td><strong>Continuum Google Workspace</strong></td><td>Continuum's company accounts, with two-step verification required.</td><td>The identity service signs in Continuum staff (UC-07; ADR 2).</td></tr>
+      <tr><td><strong>Client pavement management system</strong></td><td>Existing client database with PCI records per section and survey year, with coordinates. Airport or road network.</td><td>Automatic connection for the funding agency: PCI records (section, coordinates, PCI, year). Method pending (UC-05; ADR 4).</td></tr>
+    </tbody>
+  </table>
+</div>

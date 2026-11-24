@@ -1,0 +1,47 @@
+<div class="landscape">
+  <div class="figpage">
+    <h1 id="c2" data-toc="1">6. C2 Containers</h1>
+    <figure>
+      <img src="../c4/styled/c2-containers.svg" alt="C2 container diagram of the pavement data platform MVP">
+      <figcaption>Figure 2. Containers. Candidate technologies are listed, not chosen. The language model has a dashed border because hosted or self-hosted is pending.</figcaption>
+      <div class="figsrc">Source: <code>docs/architecture/c4/styled/c2-containers.puml</code>, styled copy of <code>docs/architecture/c4/c2-containers.puml</code></div>
+    </figure>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="box">
+    <div class="label">Key points</div>
+    <ul>
+      <li>Five containers. One deployable API application (modular monolith) holds the platform logic (Section 10). Technologies are candidates, not chosen; all run on any cloud provider or on premises.</li>
+      <li>The language model receives no result rows and has no database access (ADR 6). All client data sit in one database, isolated by client with row-level security (ADR 3; ADR 7).</li>
+    </ul>
+  </div>
+
+  <h2 id="c2-containers">6.1 Containers</h2>
+  <table class="tight">
+    <thead><tr><th style="width:15%">Container</th><th style="width:18%">Technology candidates</th><th>Responsibilities</th><th style="width:11%">Use cases</th><th style="width:7%">ADR</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Web application</strong></td><td>React or Vue (TypeScript)</td><td>Runs in the browser. Project list and workspace, question box, project overview and section view, data loading, access management.</td><td>UC-01 to UC-09</td><td></td></tr>
+      <tr><td><strong>API application</strong></td><td>Python with FastAPI, or TypeScript with NestJS</td><td>Modular monolith. Checks per-project permissions, answers questions with source rows through judged query plans and answer templates, loads and validates PCI data, keeps the change history.</td><td>UC-01 to UC-09</td><td>7</td></tr>
+      <tr><td><strong>Language model</strong> <span class="chip pend">Pending</span></td><td>Hosted model API, or self-hosted open-weight model</td><td>Turns questions into query plans, checks each plan against the question (judge), and rewords the answer text the API writes from templates. Receives no result rows and has no access to the database.</td><td>UC-01 to UC-04</td><td>5, 6</td></tr>
+      <tr><td><strong>Platform database</strong></td><td>PostgreSQL with PostGIS, or Microsoft SQL Server</td><td>Three data layers as schemas: bronze (loads as received), silver (validated PCI per network section and survey year, with versions), gold (serving tables, rebuilt with each load or correction). Also projects, users, permissions, load jobs and the audit log; answer log entries are kept for a retention period. Client data isolated: shared tables with row-level security.</td><td>UC-01 to UC-09</td><td>3, 7</td></tr>
+      <tr><td><strong>File storage</strong></td><td>S3-compatible object storage, or network file volume</td><td>Keeps the original uploaded files as evidence of each load, for a retention period. Later holds PDFs.</td><td>UC-05, UC-09</td><td>7</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="c2-relationships">6.2 Relationships</h2>
+  <p class="small">All eight people use the web application over HTTPS (use cases in 5.1). Client identity providers and Google Workspace appear only in C1.</p>
+  <table class="tight">
+    <thead><tr><th style="width:17%">From</th><th style="width:17%">To</th><th>Purpose</th><th style="width:14%">Protocol</th><th style="width:12%">Use cases</th></tr></thead>
+    <tbody>
+      <tr><td>Web application</td><td>API application</td><td>Sends requests; receives answers, tables and section PCI series</td><td>JSON over HTTPS</td><td>UC-01 to UC-09</td></tr>
+      <tr><td>Web application</td><td>Identity service</td><td>Sends users to sign in; receives a signed sign-in token</td><td>OpenID Connect</td><td>UC-07</td></tr>
+      <tr><td>API application</td><td>Identity service</td><td>Checks that sign-in tokens are valid</td><td>OpenID Connect</td><td>UC-07</td></tr>
+      <tr><td>API application</td><td>Language model</td><td>Asks for query plans, a judge's verdict on each plan, and a reword of the template answer text</td><td>HTTPS</td><td>UC-01 to UC-04</td></tr>
+      <tr><td>API application</td><td>Platform database</td><td>Reads and writes PCI records, projects, permissions and change history</td><td>SQL</td><td>UC-01 to UC-09</td></tr>
+      <tr><td>API application</td><td>File storage</td><td>Stores and reads original uploaded files; deletes them after the retention period</td><td>Not specified</td><td>UC-05, UC-09</td></tr>
+      <tr><td>API application</td><td>Client pavement management system</td><td>Automatic connection for the funding agency: PCI records</td><td>Method pending</td><td>UC-05</td></tr>
+    </tbody>
+  </table>
+</div>

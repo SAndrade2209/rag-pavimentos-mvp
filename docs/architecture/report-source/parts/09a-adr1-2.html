@@ -1,0 +1,147 @@
+<div class="sec">
+  <h1 id="records" data-toc="1">8. Decision records</h1>
+  <p>One subsection per ADR, in the reading order of Section 7.1. Each starts with what the decision does and why this option was chosen, then follows the ADR: context, options, decision, attributes and consequences. The text is condensed from the ADR files; [assumption] marks are kept as written.</p>
+
+  <div class="adr" style="break-before:auto">
+    <div class="kicker">Decision record 1 of 7</div>
+    <h2 class="adr-title" id="adr1" data-toc="2"><span class="n">8.1 ADR 1.</span> C4 model and diagrams as code</h2>
+  <div class="adr-full">Document the architecture with the C4 model and diagrams as code in PlantUML</div>
+    <div class="adr-meta"><span class="chip ok">Accepted</span> 2026-11-20, with an update note of 2026-11-23 &middot; <span class="path">docs/architecture/adr/2026-11-20-use-c4-model.md</span></div>
+
+    <div class="grid2">
+      <div class="box what"><div class="label">What it does</div>
+        <p class="lead">Sets how the architecture is described and kept current. The diagrams are plain-text PlantUML files at three C4 levels (context, containers, components), stored in Git next to the code and reviewed in the same pull requests. An architecture change updates the diagram of its level; a decision also gets an ADR.</p></div>
+      <div class="box why"><div class="label">Why this option</div>
+        <p>Diagrams made in drawing tools are binary or exported files: their changes cannot be reviewed line by line, and they drift from the code. Level 4 (code) is left out because hand-maintained class diagrams change with every refactoring.</p></div>
+    </div>
+
+    <h3>Context</h3>
+    <ul>
+      <li>The MVP needs documentation that describes the system at several levels of detail: its environment (users and external systems), its containers (applications, services and data stores) and its internal components.</li>
+      <li>It needs one notation for the whole team.</li>
+      <li>It must live in the same repository as the code, be versioned with Git and be reviewed in the same pull requests.</li>
+    </ul>
+
+    <h3>Options</h3>
+    <table class="opts">
+      <thead><tr><th>Option</th><th>Notes from the ADR</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr><td>C4 model, diagrams as code in PlantUML with C4-PlantUML</td><td>Plain-text files with readable diffs, in Git with the code; one notation; each level targets an audience.</td><td><span class="chip ok">Chosen</span></td></tr>
+        <tr><td>Diagrams in drawing tools</td><td>Stored as binary or exported files. Changes cannot be reviewed line by line, and the diagrams tend to become outdated relative to the code.</td><td><span class="chip no">Not chosen</span></td></tr>
+        <tr><td>C4 level 4 (code)</td><td>Hand-maintained class diagrams change with every refactoring, and their upkeep is high in an MVP. If needed, they are generated from the code or the IDE.</td><td><span class="chip no">Not produced</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Decision</h3>
+    <ol>
+      <li>Document the architecture with Simon Brown's C4 model at three levels: C1 context (<code>c1-context.puml</code>), C2 containers (<code>c2-containers.puml</code>) and C3 components (<code>c3-components.puml</code>), in <code>docs/architecture/c4/</code>.</li>
+      <li>Do not produce level 4 (code).</li>
+      <li>Write the diagrams as code in PlantUML with the C4-PlantUML library.</li>
+    </ol>
+    <h4>Update of 2026-11-23</h4>
+    <ul>
+      <li>The diagrams load the C4-PlantUML library bundled with PlantUML (C4-PlantUML 2.14.0 with PlantUML 1.2026.10) instead of the GitHub <code>master</code> URL. Rendering needs no internet access and prints no deprecation warnings; the library version follows the installed PlantUML version.</li>
+      <li>The C3 file holds three focused views of the API application (requests and access; loading and data layers; question answering), because a single view with all components and relationships was hard to read.</li>
+      <li>Styled copies in <code>docs/architecture/c4/styled/</code> are for reading and presenting: one shared look (colors by module and data layer, icons, rounded boxes), shorter text, numbered steps, and PNG and SVG renders. They show the same elements and relationships as the originals, which stay the source of truth.</li>
+    </ul>
+
+    <h3>Attributes</h3>
+    <table class="attr">
+      <thead><tr><th class="gain">Gained</th><th class="cost">Sacrificed</th></tr></thead>
+      <tbody><tr>
+        <td><ul>
+          <li><strong>Maintainability of the documentation:</strong> plain-text files with readable diffs.</li>
+          <li><strong>Traceability:</strong> the history of the architecture is kept in Git with the code.</li>
+          <li><strong>Comprehensibility:</strong> each level targets an audience. C1 is readable by non-technical stakeholders; C2 and C3 target the technical team.</li>
+          <li><strong>Consistency:</strong> one notation for all diagrams.</li>
+        </ul></td>
+        <td><ul>
+          <li><strong>Control over visual design:</strong> PlantUML computes the layout, and fine-tuning is limited.</li>
+          <li><strong>Accessibility for non-technical people:</strong> editing the diagrams requires the PlantUML and C4-PlantUML syntax.</li>
+          <li><strong>Code-level detail:</strong> without level 4, the mapping between components and classes is not drawn.</li>
+        </ul></td>
+      </tr></tbody>
+    </table>
+
+    <h3>Consequences</h3>
+    <ul>
+      <li>Rendering requires PlantUML: a local installation, a PlantUML server or an editor extension.</li>
+      <li>Every architecture change updates the diagram of its level. If the change involves a decision, an ADR is recorded.</li>
+      <li>The diagrams are not generated from the code. Keeping them current depends on reviewing them in every pull request that changes the architecture.</li>
+      <li>When an original diagram changes, its styled copy and renders are updated too, which adds work to every diagram change. Changes are reviewed in the <code>.puml</code> files; the renders are generated from them.</li>
+    </ul>
+  </div>
+
+  <div class="adr">
+    <div class="kicker">Decision record 2 of 7</div>
+    <h2 class="adr-title" id="adr2" data-toc="2"><span class="n">8.2 ADR 2.</span> Sign-in through an identity service</h2>
+  <div class="adr-full">Delegate sign-in to an identity service</div>
+    <div class="adr-meta"><span class="chip ok">Accepted</span> 2026-11-23 &middot; <span class="path">docs/architecture/adr/2026-11-23-delegate-sign-in-to-an-identity-service.md</span></div>
+
+    <div class="grid2">
+      <div class="box what"><div class="label">What it does</div>
+        <p class="lead">The platform stores no passwords and runs no sign-in of its own. An identity service signs users in, with MFA, single sign-on for clients that require it, and Google Workspace for Continuum staff, and hands the platform a signed token through OpenID Connect. What a signed-in user may do (projects and permissions) is still decided inside the platform.</p></div>
+      <div class="box why"><div class="label">Why this option</div>
+        <p>A hosted service gives MFA and single sign-on with no sign-in code to write and no new container. Hosted and self-hosted services both use OpenID Connect, so a later move between them changes configuration, not the platform's code.</p></div>
+    </div>
+
+    <h3>Context</h3>
+    <ul>
+      <li>UC-07: users sign in and see only the projects granted to them; a user without access to any project cannot enter. UC-08: managers grant and remove access per project.</li>
+      <li>Two concerns are often mixed up. <strong>Authentication</strong> proves who the user is and is decided here. <strong>Authorization</strong>, what that user may do (projects and permissions, UC-07, UC-08), stays in the platform.</li>
+      <li>Some clients may require their staff to sign in with their own organization's accounts (single sign-on); others may accept accounts created in the platform. Both cases have to be supported.</li>
+      <li>Continuum staff, consultants and administrators, use Google Workspace accounts.</li>
+      <li>Multi-factor authentication (MFA) is required for every user.</li>
+      <li>Constraints: data stay in the US; the platform runs on any major cloud provider.</li>
+      <li>Attributes involved: security (high), deployability and simplicity (high), usability (medium), interoperability (medium).</li>
+    </ul>
+
+    <h3>Options</h3>
+    <table class="opts">
+      <thead><tr><th>Option</th><th>Notes from the ADR</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr><td>1. Build sign-in in the API application</td><td>The team writes and maintains password storage, MFA and each single sign-on integration, using libraries.</td><td><span class="chip no">Not chosen</span></td></tr>
+        <tr><td>2. Self-hosted open-source identity server</td><td>For example, Keycloak, run as a new container.</td><td><span class="chip alt">Fallback</span></td></tr>
+        <tr><td>3. Hosted identity service</td><td>From a company independent of the cloud host (for example, Auth0). The identity services of cloud providers themselves are excluded, because they tie the platform to one provider.</td><td><span class="chip ok">Chosen</span></td></tr>
+        <tr><td>4. Google sign-in for everyone</td><td>Client staff do not have Google accounts from Continuum.</td><td><span class="chip no">Excluded</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Decision</h3>
+    <ul>
+      <li>Sign-in is delegated to an identity component through the OpenID Connect standard. The API application accepts only signed sign-in tokens from that component and stores no passwords.</li>
+      <li>The identity component provides platform accounts with MFA required; single sign-on with a client's own identity provider, set up per client when that client requires it; and Google Workspace sign-in for Continuum staff.</li>
+      <li>The MVP starts with option 3, a hosted identity service, provided the chosen service keeps user data in the US and its price fits the budget. If no service meets both, option 2.</li>
+      <li>Options 2 and 3 both use OpenID Connect, so moving from one to the other later changes configuration, not the platform's code.</li>
+      <li>Authorization stays in the platform. After sign-in, the API application checks the user's projects and permissions (UC-07, UC-08), including the rule that a user without any project cannot enter.</li>
+      <li>The specific service is chosen after checking US data location, MFA and single sign-on support, and price.</li>
+    </ul>
+
+    <h3>Attributes</h3>
+    <table class="attr">
+      <thead><tr><th class="gain">Gained</th><th class="cost">Sacrificed</th></tr></thead>
+      <tbody><tr>
+        <td><ul>
+          <li><strong>Security (high):</strong> the platform stores no passwords. MFA and single sign-on come from a component built for that purpose. For clients with single sign-on, and for Continuum staff, access ends automatically when a person leaves their organization.</li>
+          <li><strong>Deployability and simplicity (high):</strong> no sign-in code to write and maintain; with a hosted service, no new container.</li>
+          <li><strong>Usability (medium):</strong> client staff with single sign-on use their work account; Continuum staff use their Google account.</li>
+          <li><strong>Interoperability (medium):</strong> OpenID Connect and the single sign-on standards are what client identity providers already support.</li>
+        </ul></td>
+        <td><ul>
+          <li><strong>Deployability and simplicity (high), partly:</strong> one external service to configure, and a single sign-on setup with the IT department of each client that requires it.</li>
+          <li><strong>Security (high), partly:</strong> user names and email addresses are kept by a third party. Mitigated by the US data location requirement and by keeping all project data and permissions in the platform.</li>
+        </ul></td>
+      </tr></tbody>
+    </table>
+
+    <h3>Consequences</h3>
+    <ul>
+      <li>C1 gains three external systems: the identity service, client identity providers (for clients with single sign-on) and Continuum's Google Workspace. If option 2 is used instead, the identity server becomes a container in C2.</li>
+      <li>UC-07: the sign-in method is resolved.</li>
+      <li>For users who sign in with their organization's account, MFA is enforced by that organization's identity provider; this is confirmed per client.</li>
+      <li>Continuum's Google Workspace must require two-step verification for staff who use the platform.</li>
+      <li>The hosted service has a subscription price, compared when the service is chosen.</li>
+      <li>Moving between hosted and self-hosted later requires migrating user accounts; users with platform accounts may need to reset their passwords.</li>
+    </ul>
+  </div>
+</div>

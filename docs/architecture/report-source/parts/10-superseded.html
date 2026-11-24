@@ -1,0 +1,31 @@
+<div class="sec">
+  <h1 id="superseded" data-toc="1">9. Superseded decisions</h1>
+  <p>Two ADRs were replaced on 2026-11-23. Both stay in the repository with the status "Superseded by" and a link to the replacement. Query plans built from blocks, the seven modules and the bronze, silver and gold layers carried over.</p>
+  <table>
+    <thead><tr><th style="width:24%">Superseded ADR</th><th style="width:12%">Replaced by</th><th>What changed</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Ground answers in PCI data through validated query plans</strong><br><span class="path">2026-11-23-ground-answers-with-validated-query-plans.md</span></td>
+        <td>ADR 6</td>
+        <td><ul>
+          <li><strong>Judge:</strong> now runs before the query, and a rejected plan goes back to the planner with the reason, up to three plans. Before, it ran after the query with no action defined on rejection.</li>
+          <li><strong>Answer text:</strong> now written by the API from one template per operation, then reworded by the model and kept only if numbers, survey years and section identifiers match. Before, the model wrote the text from the result rows, followed by a number check.</li>
+          <li><strong>Data sent to the model:</strong> now the question, plans and template text, never result rows. Before, result rows were sent for the answer text.</li>
+          <li><strong>Answer log:</strong> now kept for a retention period, then deleted. Before, kept like other data.</li>
+          <li><strong>Model calls per answered question:</strong> now three to seven. Before, two or three.</li>
+        </ul></td>
+      </tr>
+      <tr>
+        <td><strong>Structure the backend as a modular monolith with bronze, silver and gold data layers</strong><br><span class="path">2026-11-23-backend-modular-monolith-with-data-layers.md</span></td>
+        <td>ADR 7</td>
+        <td><ul>
+          <li><strong>Gold:</strong> now rebuilt in the same database transaction as each load or correction. Before, rebuilt after it.</li>
+          <li><strong>Original files:</strong> now kept in file storage for a retention period and deleted by a scheduled retention job. Before, not decided, with file storage marked as an assumption.</li>
+          <li><strong>Audit log:</strong> now PCI data changes, access grants and removals, denied requests, load summaries and the answer log; allowed requests are not logged one by one. Before, every access decision.</li>
+          <li><strong>Option comparison:</strong> the chosen option F is now scored with options A to E. Before, it was not scored.</li>
+          <li><strong>Load jobs:</strong> unchanged, with the reason now recorded: the initial load of a client's history may take longer than a web request allows.</li>
+        </ul></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,142 @@
+<div class="adr">
+  <div class="kicker">Decision record 3 of 7</div>
+  <h2 class="adr-title" id="adr3" data-toc="2"><span class="n">8.3 ADR 3.</span> Client isolation with row-level security</h2>
+  <div class="adr-full">Isolate client data in shared tables with row-level security</div>
+  <div class="adr-meta"><span class="chip ok">Accepted</span> 2026-11-23 &middot; <span class="path">docs/architecture/adr/2026-11-23-isolate-client-data-with-row-level-security.md</span></div>
+
+  <div class="grid2">
+    <div class="box what"><div class="label">What it does</div>
+      <p class="lead">All clients share one database and the same tables. Every row of client data carries a client identifier, and the database itself returns only the rows of the client making the request. The API also filters by client, so one missing filter in the code does not expose another client's data. Permissions between projects of the same client are checked by the API.</p></div>
+    <div class="box why"><div class="label">Why this option</div>
+      <p>With 1 to 3 clients expected, a database per client would be manageable, but it multiplies data model updates and backups, sends each request to a different database and turns any later cross-client analysis into a data-copying project. A client that needs its own database can still be moved to one later.</p></div>
+  </div>
+
+  <h3>Context</h3>
+  <ul>
+    <li>The platform supports multiple clients with isolated data (CLAUDE.md). Clients are agencies and airports with government data.</li>
+    <li>Isolation has two levels. <strong>Between clients:</strong> one client never sees another client's data; this ADR covers it. <strong>Between projects of the same client:</strong> access is granted per project (UC-07, UC-08) and checked by the API application; not decided here.</li>
+    <li>Client data in the platform database: PCI records per network section and survey year, projects, users, permissions and change history (UC-05, UC-09).</li>
+    <li>Constraint: data and backups stay in the US.</li>
+    <li>Expected clients: 1 to 3 in the first year or two. A client requiring its own database is possible but not likely. Continuum may want to analyze data across clients later, with permission.</li>
+    <li>Attributes involved: security (high), deployability and simplicity (high), recoverability (high), performance (medium).</li>
+  </ul>
+
+  <h3>Options</h3>
+  <table class="opts">
+    <thead><tr><th>Option</th><th>Notes from the ADR</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td>1. Shared tables with a client identifier; the API filters every query</td><td>Simplest. A single query that forgets the filter exposes another client's data.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>2. Shared tables with a client identifier, plus row-level security in the database</td><td>The database itself returns only the rows of the client making the request, even if the code forgets the filter.</td><td><span class="chip ok">Chosen</span></td></tr>
+      <tr><td>3. One schema per client in a single database</td><td>Stronger separation. Every change to the data model has to be applied to each client's schema.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>4. One database per client</td><td>The strongest separation, and one client's data can be restored or removed on its own. Every client adds a database to deploy, update, back up and monitor.</td><td><span class="chip no">Not chosen</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Decision</h3>
+  <ul>
+    <li>Every table that holds client data has a client identifier.</li>
+    <li>The database enforces row-level security on those tables: each request sees only the rows of its client. The API application also filters by client, so there are two layers.</li>
+    <li>Per-project permissions (UC-08) are checked by the API application, inside the client's data.</li>
+    <li>Automated tests check that a user of one client cannot read or change another client's data.</li>
+    <li>The database technology chosen for C2 must support row-level security. Both candidates, PostgreSQL and Microsoft SQL Server, do.</li>
+    <li>A client that requires its own database, for example by contract, is moved to one through a new ADR. The client identifier makes its data straightforward to extract.</li>
+  </ul>
+
+  <h3>Attributes</h3>
+  <table class="attr">
+    <thead><tr><th class="gain">Gained</th><th class="cost">Sacrificed</th></tr></thead>
+    <tbody><tr>
+      <td><ul>
+        <li><strong>Security (high):</strong> a missing filter in the code does not expose another client's data, because the database enforces the separation as well.</li>
+        <li><strong>Deployability and simplicity (high):</strong> one database to deploy, update and monitor, whatever the number of clients.</li>
+        <li><strong>Recoverability (high):</strong> one backup process covers all clients.</li>
+      </ul></td>
+      <td><ul>
+        <li><strong>Recoverability (high), partly:</strong> restoring one client's data on its own is harder than with a database per client; it requires restoring a copy and extracting that client's rows. UC-09 reduces the need, since data mistakes are corrected without a restore.</li>
+        <li><strong>Deployability and simplicity, slightly:</strong> row-level security policies have to be written and tested for each client table.</li>
+        <li><strong>Performance (medium), slightly:</strong> the database applies the policy on every query. The cost is expected to be small with the client identifier indexed.</li>
+      </ul></td>
+    </tr></tbody>
+  </table>
+
+  <h3>Consequences</h3>
+  <ul>
+    <li>C2: the platform database is described as shared tables with row-level security.</li>
+    <li>The database technology ADR must keep row-level security support as a requirement.</li>
+    <li>All clients share one database in the US. A client that needs its data elsewhere needs a separate database (new ADR).</li>
+    <li>Cross-client isolation tests belong to the minimum automated test set (maintainability).</li>
+    <li>Row-level security blocks cross-client queries by default. If Continuum adds cross-client analysis later, it is a separate, explicitly permitted function, decided in a new ADR.</li>
+  </ul>
+</div>
+
+<div class="adr">
+  <div class="kicker">Decision record 4 of 7</div>
+  <h2 class="adr-title" id="adr4" data-toc="2"><span class="n">8.4 ADR 4.</span> PCI loading by upload and connection</h2>
+  <div class="adr-full">Load PCI data by file upload and by an automatic connection</div>
+  <div class="adr-meta"><span class="chip ok">Accepted</span> 2026-11-23 &middot; <span class="path">docs/architecture/adr/2026-11-23-load-pci-data-by-upload-and-connection.md</span></div>
+
+  <div class="grid2">
+    <div class="box what"><div class="label">What it does</div>
+      <p class="lead">Opens two ways in for PCI data: CSV and Excel upload for every client, and an automatic connection built only for the funding agency's pavement management system. Every source is converted to one internal format and passes the same UC-05 validation, so new survey years are added, existing values are not overwritten, and each load is recorded with who, when and which source.</p></div>
+    <div class="box why"><div class="label">Why this option</div>
+      <p>Upload alone would not meet the funding agency's expectation of an automatic connection. A connection alone would leave out the clients and staff who work from files and spreadsheets.</p></div>
+  </div>
+
+  <h3>Context</h3>
+  <ul>
+    <li>UC-05: PCI data (section, coordinates, PCI, year) come from files and from the client's existing pavement management databases. Each load comes in through a project and is validated: new survey years are added, an existing section and year is reported, not overwritten, and rejected rows are listed with the reason.</li>
+    <li>The funding agency expects the platform to connect automatically to its existing pavement management system. File upload alone would not meet that expectation.</li>
+    <li>New PCI data are loaded yearly or less often per client. Continuum staff and client staff both load data.</li>
+    <li>Clients keep PCI data in spreadsheets as well as in databases, so upload accepts CSV and Excel.</li>
+    <li>Expected clients: 1 to 3 in the first year or two (ADR 3). PDFs and other file types come later; loading must be extensible.</li>
+    <li>The agency's system, its export or API options and its IT rules for connections are not known yet, so the connection method is left to a separate ADR.</li>
+    <li>Attributes involved: security (high), deployability and simplicity (high), data traceability (high), interoperability (medium), extensibility (medium), usability (medium).</li>
+  </ul>
+
+  <h3>Options</h3>
+  <table class="opts">
+    <thead><tr><th>Option</th><th>Notes from the ADR</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td>1. File upload only</td><td>Simplest and safest, but it does not meet the funding agency's expectation.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>2. Automatic connection only</td><td>Leaves out the clients and staff who work from files and spreadsheets.</td><td><span class="chip no">Not chosen</span></td></tr>
+      <tr><td>3. File upload for every client, plus an automatic connection for the funding agency's system</td><td>Upload for every client; the connection only for the funding agency's system.</td><td><span class="chip ok">Chosen</span></td></tr>
+      <tr><td>4. Import API for clients</td><td>Clients write their own software to send data. Requires development work at each client.</td><td><span class="chip no">Not chosen</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Decision</h3>
+  <ul>
+    <li><strong>Upload:</strong> CSV and Excel (.xlsx) files, through the web application, by users with the Load permission on the project (UC-05, UC-08).</li>
+    <li><strong>Automatic connection:</strong> built for the funding agency's system only. Another client's system is added only when that client requires it.</li>
+    <li><strong>One validation path:</strong> the loading module converts every source into one internal format (client, project, section, coordinates, PCI, year) and applies the UC-05 validation to it. Each source is an input adapter: CSV, Excel and the agency's system now; PDFs later.</li>
+    <li><strong>Column mapping:</strong> each client's column names are mapped to section, coordinates, PCI and year once and saved, so later loads reuse the mapping.</li>
+    <li><strong>When it runs:</strong> because new data arrive yearly or less often, the connection runs when a user with the Load permission starts it. A schedule is added only if the agency requires one.</li>
+    <li><strong>How it connects</strong> (the platform reads the agency's database, reads through the system's API, or the agency's system sends scheduled exports to the platform) is decided in a separate ADR, once the agency's system and IT rules are known.</li>
+    <li><strong>Minimum for any connection method:</strong> read-only access limited to PCI data, credentials kept outside the code, and traffic and processing inside the US.</li>
+  </ul>
+
+  <h3>Attributes</h3>
+  <table class="attr">
+    <thead><tr><th class="gain">Gained</th><th class="cost">Sacrificed</th></tr></thead>
+    <tbody><tr>
+      <td><ul>
+        <li><strong>Interoperability (medium):</strong> meets the funding agency's expectation of an automatic connection, and files cover every other client.</li>
+        <li><strong>Data traceability (high):</strong> every load, by file or by connection, is recorded with who started it, when and from which source.</li>
+        <li><strong>Extensibility (medium):</strong> the input adapter boundary is where other client systems and PDFs plug in later.</li>
+        <li><strong>Usability (medium):</strong> Excel files are accepted without conversion, and the agency's data arrive without manual export.</li>
+      </ul></td>
+      <td><ul>
+        <li><strong>Deployability and simplicity (high):</strong> one connector to build, test and maintain; coordination with the agency's IT; and it can break when the agency changes its system.</li>
+        <li><strong>Security (high), partly:</strong> the platform holds access to one client system, which has to be protected. Upload, by contrast, needs no access to client systems.</li>
+      </ul></td>
+    </tr></tbody>
+  </table>
+
+  <h3>Consequences</h3>
+  <ul>
+    <li>C1 and C2: the client pavement management system stays in the diagrams, with a dashed relationship labeled as the automatic connection for the funding agency, method pending. Its direction is set by the connection method ADR.</li>
+    <li>UC-05: sources are CSV and Excel uploads, plus the automatic connection for the funding agency.</li>
+    <li>C3: the loading module has an input adapter boundary and one shared validation step.</li>
+    <li>[assumption] For connection loads, a copy of the records received is kept, as uploaded files are, so each load can be traced to what arrived.</li>
+  </ul>
+</div>

@@ -1,0 +1,215 @@
+<div class="sec">
+  <h1 id="use-cases" data-toc="1">2. Use cases</h1>
+
+  <p>Nine use cases describe what users need to resolve with the PCI data and the result they obtain, without implementation details. UC-01 to UC-06 answer a pavement question or serve the data. UC-07 to UC-09 are supporting use cases: they answer no pavement question, but the others depend on them.</p>
+
+  <h2 id="uc-catalog">2.1 Catalog</h2>
+  <table class="tight">
+    <thead><tr><th style="width:8%">ID</th><th style="width:30%">Use case</th><th>Decision supported or purpose</th><th style="width:27%">Served by (C3 modules)</th></tr></thead>
+    <tbody>
+      <tr class="group"><td colspan="4">Main use cases</td></tr>
+      <tr><td>UC-01</td><td>Identify M&amp;R candidate sections</td><td>Select maintenance and rehabilitation (M&amp;R) candidates</td><td><span class="chip m-qa">Question answering</span></td></tr>
+      <tr><td>UC-02</td><td>Track PCI over time</td><td>Time M&amp;R; condition reporting</td><td><span class="chip m-qa">Question answering</span></td></tr>
+      <tr><td>UC-03</td><td>Summarize network condition</td><td>Budget and reporting</td><td><span class="chip m-qa">Question answering</span></td></tr>
+      <tr><td>UC-04</td><td>Find sections by location</td><td>Plan inspections</td><td><span class="chip m-qa">Question answering</span></td></tr>
+      <tr><td>UC-05</td><td>Load PCI data</td><td>Keeps PCI data current for UC-01 to UC-04 and UC-06</td><td><span class="chip m-loading">Loading</span> <span class="chip m-pci">PCI data</span></td></tr>
+      <tr><td>UC-06</td><td>View PCI data in a project</td><td>Review current PCI and section history</td><td><span class="chip m-projects">Projects</span> <span class="chip m-views">Views</span></td></tr>
+      <tr class="group"><td colspan="4">Supporting use cases</td></tr>
+      <tr><td>UC-07</td><td>Sign in and open accessible projects</td><td>Users see only the projects granted to them</td><td><span class="chip m-access">Access</span> <span class="chip m-projects">Projects</span> + identity service</td></tr>
+      <tr><td>UC-08</td><td>Manage project access</td><td>Grant and remove access and permissions per project</td><td><span class="chip m-access">Access</span></td></tr>
+      <tr><td>UC-09</td><td>Correct or delete PCI data</td><td>Fix data while keeping the old values</td><td><span class="chip m-pci">PCI data</span></td></tr>
+    </tbody>
+  </table>
+  <p class="note">Module mapping from the use case labels on the C3 diagrams (Section 10). The audit module records loads, corrections, access changes, denied requests and answers for all of them.</p>
+
+  <h2 id="uc-actors">2.2 Actors and use cases</h2>
+  <table class="tight">
+    <thead>
+      <tr><th style="width:30%">Actor</th><th class="c">01</th><th class="c">02</th><th class="c">03</th><th class="c">04</th><th class="c">05</th><th class="c">06</th><th class="c">07</th><th class="c">08</th><th class="c">09</th></tr>
+    </thead>
+    <tbody>
+      <tr class="group"><td colspan="10">Use PCI data</td></tr>
+      <tr><td>Airport pavement management staff</td><td class="c">P</td><td class="c">P</td><td class="c">P</td><td class="c">P</td><td class="c">P</td><td class="c">P*</td><td class="c">Yes</td><td class="c"></td><td class="c">Yes*</td></tr>
+      <tr><td>Pavement management engineer</td><td class="c">P</td><td class="c">P</td><td class="c">P</td><td class="c"></td><td class="c">P</td><td class="c">P*</td><td class="c">Yes</td><td class="c"></td><td class="c">Yes*</td></tr>
+      <tr><td>District/maintenance staff</td><td class="c">P</td><td class="c"></td><td class="c"></td><td class="c">P</td><td class="c"></td><td class="c">P*</td><td class="c">Yes</td><td class="c"></td><td class="c"></td></tr>
+      <tr><td>Continuum consultant</td><td class="c">S</td><td class="c">S</td><td class="c"></td><td class="c"></td><td class="c">S</td><td class="c">S*</td><td class="c">Yes</td><td class="c"></td><td class="c">Yes*</td></tr>
+      <tr><td>Client data administrator</td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c">P</td><td class="c"></td><td class="c">Yes</td><td class="c"></td><td class="c">Yes*</td></tr>
+      <tr class="group"><td colspan="10">Manage project access</td></tr>
+      <tr><td>Client manager</td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c">Yes</td><td class="c">P</td><td class="c"></td></tr>
+      <tr><td>Project lead</td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c">Yes</td><td class="c">P</td><td class="c"></td></tr>
+      <tr><td>Continuum administrator</td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c">Yes</td><td class="c">P</td><td class="c"></td></tr>
+    </tbody>
+  </table>
+  <p class="note">P: primary actor. S: secondary actor. Yes: every user signs in (UC-07). * [assumption] The UC-06 actors are an assumption, and UC-09 is shown for the users who load data; any user can receive the Correct and delete permission. Every action also needs the matching permission on the project (2.3).</p>
+
+  <h2 id="uc-permissions">2.3 Permissions per project</h2>
+  <p>Access is granted per project (UC-08). [assumption] Permission levels:</p>
+  <table class="tight">
+    <thead><tr><th style="width:24%">Permission</th><th>Allows</th><th style="width:24%">Use cases</th></tr></thead>
+    <tbody>
+      <tr><td>View</td><td>Ask questions; view project and section PCI</td><td>UC-01 to UC-04, UC-06</td></tr>
+      <tr><td>Load</td><td>Load PCI data</td><td>UC-05</td></tr>
+      <tr><td>Correct and delete</td><td>Correct or delete PCI data, including accepting a conflicting loaded value as a correction</td><td>UC-09 (and UC-05 conflicts)</td></tr>
+      <tr><td>Manage access</td><td>Grant and remove access</td><td>UC-08</td></tr>
+    </tbody>
+  </table>
+  <p>[assumption] Scope of each access manager: a client manager covers all projects of their client; a project lead covers their own project; a Continuum administrator sets up each client and its first client manager, and can grant access to any project.</p>
+
+  <h2 id="uc-answer-format">2.4 Answer format (UC-01 to UC-04)</h2>
+  <ul>
+    <li>A short text answer plus the source rows.</li>
+    <li>A downloadable table.</li>
+    <li>Stated assumptions: the threshold, years and filters used.</li>
+    <li>No charts. Charts appear only in the UC-06 section view.</li>
+  </ul>
+</div>
+
+<div class="sec">
+  <h2 id="uc-details" style="margin-top:0">2.5 Use case details</h2>
+
+  <div class="uc">
+    <div class="uc-head"><span class="id">UC-01</span>Identify M&amp;R candidate sections <span class="chip">Main</span></div>
+    <table>
+      <tr><td class="k">Actors</td><td>Primary: pavement management engineer; district/maintenance staff; airport pavement management staff. Secondary: Continuum consultant.</td></tr>
+      <tr><td class="k">Goal</td><td>List the sections in poor condition in the latest survey to build the maintenance and rehabilitation (M&amp;R) work program.</td></tr>
+      <tr><td class="k">Example</td><td>"Which sections had a PCI below 55 in the latest survey?" The threshold (55) is an example given by the user in the question, not a recommended value.</td></tr>
+      <tr><td class="k">Data</td><td>Section, PCI, year.</td></tr>
+      <tr><td class="k">Expected result</td><td><ul>
+        <li>A short answer with the number of sections below the threshold.</li>
+        <li>A table of section, survey year and PCI, sorted from lowest PCI, with the source rows. Downloadable.</li>
+        <li>The answer states the PCI threshold and the survey year used.</li>
+        <li>If the question gives no threshold and none is configured, the system asks the user for one before answering.</li>
+      </ul></td></tr>
+    </table>
+  </div>
+
+  <div class="uc">
+    <div class="uc-head"><span class="id">UC-02</span>Track PCI over time <span class="chip">Main</span></div>
+    <table>
+      <tr><td class="k">Actors</td><td>Primary: pavement management engineer; airport pavement management staff. Secondary: Continuum consultant.</td></tr>
+      <tr><td class="k">Goal</td><td>See how a section or a set of sections deteriorated between surveys, to time M&amp;R and support condition reports.</td></tr>
+      <tr><td class="k">Examples</td><td>"How has the PCI of section X changed since 2018?" "Which sections lost the most PCI points since the previous survey?" The year (2018) is an example.</td></tr>
+      <tr><td class="k">Data</td><td>Section, PCI, year.</td></tr>
+      <tr><td class="k">Expected result</td><td><ul>
+        <li>PCI for each survey year and the change in PCI points between surveys, with the source rows.</li>
+        <li>A table of section, survey year, PCI and change in PCI points. Downloadable.</li>
+        <li>The answer states the years compared.</li>
+        <li>The answer notes the years in which a section has no survey, instead of filling the gap.</li>
+      </ul></td></tr>
+    </table>
+  </div>
+
+  <div class="uc">
+    <div class="uc-head"><span class="id">UC-03</span>Summarize network condition for budget and reporting <span class="chip">Main</span></div>
+    <table>
+      <tr><td class="k">Actors</td><td>Primary: pavement management engineer; airport pavement management staff.</td></tr>
+      <tr><td class="k">Goal</td><td>Produce network-level condition figures for funding requests and condition reports.</td></tr>
+      <tr><td class="k">Examples</td><td>"What was the average PCI of the network in each survey year since 2020?" "How many sections were below the threshold in 2024 compared with 2022?" The years are examples.</td></tr>
+      <tr><td class="k">Data</td><td>Section, PCI, year.</td></tr>
+      <tr><td class="k">Expected result</td><td><ul>
+        <li>Averages or counts by survey year, with the table they were computed from. Downloadable.</li>
+        <li>The answer states that averages are by section count, not weighted by area or length, because those fields are not in the phase 1 data.</li>
+        <li>For counts below a threshold, the answer states the threshold used (same rule as UC-01).</li>
+      </ul></td></tr>
+    </table>
+  </div>
+
+  <div class="uc">
+    <div class="uc-head"><span class="id">UC-04</span>Find sections by location to plan inspections <span class="chip">Main</span></div>
+    <table>
+      <tr><td class="k">Actors</td><td>Primary: district/maintenance staff; airport pavement management staff.</td></tr>
+      <tr><td class="k">Goal</td><td>Find sections near a point or inside an area, with their latest PCI and last survey year, to decide which sections to survey next or which records to verify.</td></tr>
+      <tr><td class="k">Example</td><td>"Which sections within 2 km of these coordinates have not been surveyed since 2021?" The radius (2 km) and the year (2021) are examples.</td></tr>
+      <tr><td class="k">Data</td><td>Section, coordinates, PCI, year.</td></tr>
+      <tr><td class="k">Expected result</td><td><ul>
+        <li>A table of section, latest PCI, last survey year and distance from the point. Downloadable.</li>
+        <li>The answer states the search radius and the coordinates used.</li>
+      </ul></td></tr>
+    </table>
+  </div>
+
+  <div class="uc">
+    <div class="uc-head"><span class="id">UC-05</span>Load PCI data <span class="chip">Main</span></div>
+    <table>
+      <tr><td class="k">Actors</td><td>Primary: pavement management engineer; airport pavement management staff; client data administrator (a separate client role; the role name is a placeholder). Secondary: Continuum consultant, loading data on the client's behalf. Each needs the Load permission on the project; Continuum consultants get project access like any other user (UC-08).</td></tr>
+      <tr><td class="k">Goal</td><td>Load a client's PCI data so that UC-01 to UC-04 can answer from it and UC-06 can show it, and add new survey years as they become available.</td></tr>
+      <tr><td class="k">Examples</td><td>"Load the 2025 PCI survey for this airport from this CSV file." "Load the latest PCI records from our pavement management database." The year (2025) is an example.</td></tr>
+      <tr><td class="k">Data</td><td>Section, coordinates, PCI, year, and the client the data belong to.</td></tr>
+      <tr><td class="k">Sources</td><td>CSV and Excel (.xlsx) files uploaded through the web application. For the funding agency only, an automatic connection to its existing pavement management system; ADR 4 leaves the connection method to a separate ADR.</td></tr>
+      <tr><td class="k">Expected result</td><td><ul>
+        <li>New survey years are added. Existing survey years are kept.</li>
+        <li>A section and year that already exist are a conflict: the existing value stays, and the load summary shows both values. A user with the Correct and delete permission can accept the new value as a correction (UC-09), with a reason.</li>
+        <li>A load summary: rows added, conflicts, rejected rows with the reason for each, and column mapping problems.</li>
+        <li>If a load fails, it can be run again without duplicating data.</li>
+        <li>[assumption] A row is rejected if section, PCI or year is missing, or if PCI is outside the 0 to 100 scale.</li>
+        <li>Data loaded for one client are visible only to that client's users.</li>
+        <li>Each load comes in through a project. The PCI records are stored for the airport or road network and kept for every survey year. Nothing is deleted when the project ends.</li>
+        <li>Corrections and deletions of loaded data go through UC-09.</li>
+      </ul></td></tr>
+    </table>
+  </div>
+
+  <div class="uc">
+    <div class="uc-head"><span class="id">UC-06</span>View PCI data in a project <span class="chip">Main</span></div>
+    <table>
+      <tr><td class="k">Actors</td><td>[assumption] Primary: pavement management engineer; airport pavement management staff; district/maintenance staff. [assumption] Secondary: Continuum consultant.</td></tr>
+      <tr><td class="k">Goal</td><td>See the current PCI of the sections in a project, and the PCI history of one section, without writing a question.</td></tr>
+      <tr><td class="k">Examples</td><td>"Open the PCI data of this project." "Open section X." Section X is a placeholder.</td></tr>
+      <tr><td class="k">Data</td><td>Section, PCI, year.</td></tr>
+      <tr><td class="k">Expected result</td><td><ul>
+        <li>Only projects the user has access to are shown (UC-07). Requires the View permission.</li>
+        <li>Project data overview: a table of the project's sections with the latest PCI and the survey year of that PCI.</li>
+        <li>Section view, opened from the overview: PCI by survey year as a chart, with years without a survey marked as gaps, not filled; and the survey timeline, showing when each PCI survey of the section was done.</li>
+        <li>The section view shows every survey year stored for the section on the network, including surveys loaded through other projects.</li>
+      </ul></td></tr>
+    </table>
+  </div>
+
+  <div class="uc">
+    <div class="uc-head"><span class="id">UC-07</span>Sign in and open accessible projects <span class="chip">Supporting</span></div>
+    <table>
+      <tr><td class="k">Actors</td><td>Every user of the platform: the eight roles in C1 (Section 5).</td></tr>
+      <tr><td class="k">Goal</td><td>Sign in and work only with the projects the user has been granted.</td></tr>
+      <tr><td class="k">Example</td><td>"Sign in and open my projects."</td></tr>
+      <tr><td class="k">Data</td><td>The user's identity; the projects granted to the user and the user's permissions on each one (UC-08).</td></tr>
+      <tr><td class="k">Expected result</td><td><ul>
+        <li>Users sign in through the identity service, with multi-factor authentication: a platform account, their organization's own account (single sign-on, for clients that require it), or, for Continuum staff, their Google Workspace account.</li>
+        <li>After sign-in, the project list shows only the projects granted to the user.</li>
+        <li>A user without access to any project cannot sign in.</li>
+        <li>Opening a project that was not granted is refused.</li>
+        <li>Inside a granted project, the available actions match the user's permissions on that project.</li>
+      </ul></td></tr>
+    </table>
+  </div>
+
+  <div class="uc">
+    <div class="uc-head"><span class="id">UC-08</span>Manage project access <span class="chip">Supporting</span></div>
+    <table>
+      <tr><td class="k">Actors</td><td>Client manager; project lead; Continuum administrator. [assumption] Scope of each in 2.3.</td></tr>
+      <tr><td class="k">Goal</td><td>Give a person access to a project, set what they can do in it, and remove that access when it is no longer needed.</td></tr>
+      <tr><td class="k">Examples</td><td>"Give this engineer View and Load permissions on project X." "Remove this person's access to project X." Project X is a placeholder.</td></tr>
+      <tr><td class="k">Data</td><td>The person; the project; the permissions (View, Load, Correct and delete, Manage access).</td></tr>
+      <tr><td class="k">Expected result</td><td><ul>
+        <li>The person can open the project, with only the actions their permissions allow (UC-07).</li>
+        <li>Removing access stops the person from opening the project.</li>
+        <li>[assumption] The PCI data the person loaded stay in the platform after their access is removed.</li>
+        <li>[assumption] Each grant or removal records who made it and when.</li>
+      </ul></td></tr>
+    </table>
+  </div>
+
+  <div class="uc">
+    <div class="uc-head"><span class="id">UC-09</span>Correct or delete PCI data <span class="chip">Supporting</span></div>
+    <table>
+      <tr><td class="k">Actors</td><td>Any user with the Correct and delete permission on the project (UC-08).</td></tr>
+      <tr><td class="k">Goal</td><td>Fix a wrong PCI value, or remove records loaded by mistake, without losing the record of what was there before.</td></tr>
+      <tr><td class="k">Examples</td><td>"Change the 2024 PCI of section X from 85 to 58; the digits were swapped when the data were entered." "Remove the rows from yesterday's load; the file belonged to another airport." The values and section X are examples.</td></tr>
+      <tr><td class="k">Data</td><td>Section, year and PCI of the record to correct or delete; the reason for the change.</td></tr>
+      <tr><td class="k">Expected result</td><td><ul>
+        <li>From then on, answers (UC-01 to UC-04) and views (UC-06) use the corrected value.</li>
+        <li>The old value, or the deleted record, is hidden from views and answers but kept, with who made the change, when and why.</li>
+        <li>[assumption] The change history of a section can be viewed.</li>
+      </ul></td></tr>
+    </table>
+  </div>
+</div>
