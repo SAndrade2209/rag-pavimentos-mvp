@@ -2,6 +2,7 @@
 
 - Date: 2026-11-23
 - Status: Draft for review
+- Updated: 2026-11-24, section 10 (estimation method and its inputs), activities A-10 and A-11, and the team plan in 10.5
 - Basis: use cases UC-01 to UC-09, `docs/architecture/quality-attributes.md`, the C4 diagrams (C1 to C3) and the 7 accepted ADRs, at commit 19204b0
 - Work list for the estimate: `2026-11-23-estimation-work-list.xlsx`, built from the tables in this document
 
@@ -315,6 +316,8 @@ Work the sources state that an estimate should include:
 | A-07 | Writing and checking the question test set with a pavement engineer | None | ADR 5; ADR 6 |
 | A-08 | Interface design and testing with users | U-16 | Quality attributes (usability) |
 | A-09 | The backup restore test | U-14 | Quality attributes (recoverability) |
+| A-10 | Project management and coordination with the clients, the funding agency and the team | None | This document; owner set in the team plan, 2026-11-24 |
+| A-11 | End-to-end and acceptance testing before release | None | Team plan, 2026-11-24 (QA / tester) |
 
 ## 7. Technical complexity
 
@@ -418,3 +421,152 @@ Uncertainty, how much a pending decision or a missing input can change the work:
 | UC-08 Manage project access | FR-07 to FR-10 | F-04, F-05 | C-07, C-09, C-24 |
 | UC-09 Correct or delete PCI data | FR-27 to FR-31 | F-14 to F-17 | C-06, C-17, C-18, C-24 |
 | Cross-cutting | FR-41 to FR-43, TR-01 to TR-12 | F-23 to F-25 | C-24 to C-31 |
+
+## 10. Estimation method and its inputs
+
+The estimate combines three published methods, so that effort comes from counts and ratings, not from one person's figures:
+
+1. **Use Case Points (Karner 1993)**, top-down: count actors and use case transactions, rate 13 technical and 8 environmental factors, and convert the points to hours with a productivity factor chosen by the rule in Schneider and Winters (2001).
+2. **Wideband Delphi (Boehm 1981)**, bottom-up: two or three estimators give hours for each component and activity independently, discuss the rows where they differ, and agree low, most likely and high values. Expected value and spread follow PERT (Malcolm et al. 1959).
+3. **COCOMO II schedule equation (Boehm et al. 2000)**: turns either effort figure into calendar months and an average team size, adjusted by five rated scale factors.
+
+Cost is hours per role times an hourly rate entered by the user. This document proposes counts and ratings that the sources support; ratings about the team, the scale factors and the rates are left to the people who know them.
+
+[assumption] COCOMO II defines its schedule equation for effort estimated with COCOMO II. Applying it to effort from Use Case Points or Delphi is a common shortcut, not part of the published method.
+
+[unverified] The constants in 10.7 are as published in the cited books; page numbers have not been checked against the originals.
+
+### 10.1 Actors
+
+Weights: simple 1 (another system through an API), average 2 (another system through a protocol, or a person through a text interface), complex 3 (a person through a graphical interface).
+
+| Actor | How it interacts | Class | Reason |
+|---|---|---|---|
+| Airport pavement management staff | Person, web application | Complex | Graphical interface (C2) |
+| Pavement management engineer | Person, web application | Complex | Graphical interface (C2) |
+| District/maintenance staff | Person, web application | Complex | Graphical interface (C2) |
+| Continuum consultant | Person, web application | Complex | Graphical interface (C2) |
+| Client data administrator | Person, web application | Complex | Graphical interface (C2) |
+| Client manager | Person, web application | Complex | Graphical interface (C2) |
+| Project lead | Person, web application | Complex | Graphical interface (C2) |
+| Continuum administrator | Person, web application | Complex | Graphical interface (C2) |
+| Identity service | System, OpenID Connect | Simple | Defined API (ADR 2) |
+| Language model | System, HTTPS through the language model interface | Simple | Defined API (ADR 5) |
+| Client pavement management system | System, method pending | Average | [assumption] Database, API or scheduled exports are all possible (ADR 4); rated as a protocol until the method is chosen |
+
+Client identity providers and Continuum's Google Workspace talk to the identity service, not to the platform, so they are not counted.
+
+### 10.2 Use case transactions
+
+A transaction is one round trip between the actor and the platform, in the main or an alternative flow. Classes: simple up to 3 transactions (weight 5), average 4 to 7 (weight 10), complex 8 or more (weight 15).
+
+| Use case | Transactions counted | Count | Reason |
+|---|---|---|---|
+| UC-01 | Ask a question and receive the answer; give a threshold when asked; download the table; receive "cannot answer yet" | 4 | UC-01 expected result; FR-34; FR-40 |
+| UC-02 | Ask a question and receive PCI by survey year with changes and gaps; download the table; receive "cannot answer yet" | 3 | UC-02 expected result; FR-40 |
+| UC-03 | Ask for averages or counts by survey year; give a threshold when asked; download the table; receive "cannot answer yet" | 4 | UC-03 expected result; FR-34 [assumption]; FR-40 |
+| UC-04 | Ask for sections by distance and last survey; download the table; receive "cannot answer yet" | 3 | UC-04 expected result; FR-40 |
+| UC-05 | Upload a file; map columns; follow the load and read its summary; run a failed load again; start the agency connection | 5 | UC-05 expected result; ADR 4 |
+| UC-06 | Open the project overview; open the section view | 2 | UC-06 expected result |
+| UC-07 | Sign in and see the project list; refusal without any project; open a granted project; refusal of a project not granted | 4 | UC-07 expected result |
+| UC-08 | Grant access with permissions; change permissions; remove access; set up a client and its first client manager | 4 | UC-08 expected result |
+| UC-09 | Correct a value; delete records; accept a conflicting loaded value; view the change history [assumption] | 4 | UC-09 expected result; UC-05 conflict rule |
+
+Background work with no actor (validation, gold refresh, retention job, audit log) earns no use case points; the technical factors (T4, T11) and the Delphi cross-check cover it.
+
+### 10.3 Technical factors
+
+Ratings: 0 irrelevant, 3 average, 5 essential. TCF = 0.6 + 0.01 x sum of (weight x rating).
+
+| ID | Factor | Weight | Proposed rating | Reason |
+|---|---|---|---|---|
+| T1 | Distributed system | 2 | 3 | Web application, API, identity service, model and database, but one deployable (C2; ADR 7) |
+| T2 | Response time or throughput objectives | 1 | 2 | Reasonable response times, no target, few users at the same time (quality attributes; ADR 7) |
+| T3 | End-user efficiency | 1 | 3 | Answers state threshold, years and filters so engineers can check them (usability, medium) |
+| T4 | Complex internal processing | 1 | 5 | Judged query plans, templates with a reword check, versioned data layers, gold rebuilt in the same transaction (ADR 6; ADR 7) |
+| T5 | Code must be reusable | 1 | 2 | Replaceable interfaces only at two points: input adapters and the model interface (extensibility, medium) |
+| T6 | Easy to install | 0.5 | 4 | Deployability and simplicity is a high priority (quality attributes) |
+| T7 | Easy to use | 0.5 | 3 | Usability medium; follows the demo's display (quality attributes) |
+| T8 | Portable | 2 | 4 | Must run on any major cloud provider (constraint) |
+| T9 | Easy to change | 1 | 3 | Use cases will change after the first users (maintainability, medium) |
+| T10 | Concurrent | 1 | 1 | Few users at the same time; jobs run in the same process (ADR 7) |
+| T11 | Special security features | 1 | 5 | MFA, per-project permissions, row-level security, audit log, US data (security, high; ADR 2; ADR 3; ADR 7) |
+| T12 | Direct access for third parties | 1 | 2 | No third party uses the platform directly, but the agency connection method is pending and may involve the agency sending exports (ADR 4) |
+| T13 | Special user training facilities | 1 | 1 | Users are pavement engineers and airport staff; no use case asks for training facilities |
+
+### 10.4 Environmental factors
+
+Ratings: 0 none, 3 average, 5 expert or strong. ECF = 1.4 - 0.03 x sum of (weight x rating). These describe the team that will build the MVP, so only E6 is proposed here.
+
+| ID | Factor | Weight | Proposed rating | Reason |
+|---|---|---|---|---|
+| E1 | Familiarity with the development process | 1.5 | To rate | Depends on the team |
+| E2 | Application experience | 0.5 | To rate | Depends on the team |
+| E3 | Object-oriented experience | 1 | To rate | Depends on the team |
+| E4 | Lead analyst capability | 0.5 | To rate | Depends on the team |
+| E5 | Motivation | 1 | To rate | Depends on the team |
+| E6 | Stable requirements | 2 | 2 | The use cases will change after the first users, and 22 unknowns are open (quality attributes; Section 8) |
+| E7 | Part-time staff | -1 | To rate | Depends on the team |
+| E8 | Difficult programming language | -1 | To rate | Depends on the language chosen (U-05) |
+
+Productivity factor (Schneider and Winters 2001): count the factors E1 to E6 rated below 3 and E7 to E8 rated above 3. Up to 2: 20 hours per use case point. 3 or 4: 28 hours. 5 or more: the authors advise changing the project before estimating; [assumption] the workbook then uses 36 hours and flags it.
+
+### 10.5 Team plan and primary role per row
+
+Source: the team plan given on 2026-11-24. Five roles are hires; two are Continuum staff who take the activities no hire covers (A-06, A-07, A-10). Each component and activity has one primary role, used to split effort and cost by role.
+
+Phases: Design (interface design and approval of designs), Build, and Final (end-to-end and acceptance testing before release). Their lengths in months are set in the workbook.
+
+| Role | Engagement | Allocation | Phases | Rows | Work |
+|---|---|---|---|---|---|
+| Backend, database & DevOps engineer | Hire | 100% | Design, Build, Final | C-08 to C-11, C-17, C-24 to C-26, C-28, C-29, A-01 to A-04, A-09 | Access guard, access management, projects and views API, corrections with versioning, audit log, schemas and row-level security, automated test suites, backups and restore test, hosting, CI/CD and monitoring, identity service choice, pending ADRs, single sign-on setup, two-step verification |
+| AI, data & database engineer | Hire | 100% | Design, Build, Final | C-12 to C-16, C-18 to C-23, C-27, C-30, C-31, A-05 | Load jobs, CSV and Excel adapters and column mapping, agency connection, validation and load summary, retention job, gold refresh, the language model pipeline, question test runner, coordination with the agency's IT; self-hosted model and identity server only if chosen |
+| Frontend developer | Hire | 50% | Build, Final | C-01 to C-07 | All web application screens; joins after the design phase |
+| QA / tester | Hire | 25% | Final | A-11 | End-to-end and acceptance testing before release |
+| UX/UI designer | Hire | 25% | Design | A-08 | Interface design and testing with users; designs are approved before screens are built |
+| Pavement engineer (Continuum) | Continuum staff | To set | To set | A-06, A-07 | Mapping client columns to PCI fields; checking the question test set (ADR 5; ADR 6) |
+| Project manager (Continuum) | Continuum staff | To set | Design, Build, Final | A-10 | Project management and coordination |
+
+Capacity of a role = allocation x months of its phases x 152 hours. A role whose estimated hours exceed its capacity needs more time, a higher allocation or help.
+
+### 10.6 Scale factors (COCOMO II)
+
+Rated by the team: very low (VL), low (L), nominal (N), high (H), very high (VH) or extra high (XH). Use nominal when unsure.
+
+| Factor | Meaning |
+|---|---|
+| PREC | Precedentedness: how familiar this kind of system is to the organization |
+| FLEX | Development flexibility: how strictly the requirements and constraints must be met |
+| RESL | Architecture and risk resolution: how far the architecture and the main risks are settled |
+| TEAM | Team cohesion |
+| PMAT | Process maturity |
+
+### 10.7 Constants
+
+| Constant | Value | Source |
+|---|---|---|
+| Actor weights: simple, average, complex | 1, 2, 3 | Karner 1993 |
+| Use case weights: simple, average, complex | 5, 10, 15 | Karner 1993 |
+| Use case class limits: simple, average | up to 3, up to 7 transactions | Karner 1993 |
+| TCF: constant and multiplier | 0.6, 0.01 | Karner 1993 |
+| ECF: constant and multiplier | 1.4, -0.03 | Karner 1993 |
+| Hours per use case point | 20, 28 (36 [assumption]) | Schneider and Winters 2001 |
+| Schedule: C, D, B | 3.67, 0.28, 0.91 | Boehm et al. 2000 (COCOMO II.2000) |
+| Hours per person-month | 152 | Boehm et al. 2000 |
+| PREC values VL to XH | 6.20, 4.96, 3.72, 2.48, 1.24, 0.00 | Boehm et al. 2000 |
+| FLEX values VL to XH | 5.07, 4.05, 3.04, 2.03, 1.01, 0.00 | Boehm et al. 2000 |
+| RESL values VL to XH | 7.07, 5.65, 4.24, 2.83, 1.41, 0.00 | Boehm et al. 2000 |
+| TEAM values VL to XH | 5.48, 4.38, 3.29, 2.19, 1.10, 0.00 | Boehm et al. 2000 |
+| PMAT values VL to XH | 7.80, 6.24, 4.68, 3.12, 1.56, 0.00 | Boehm et al. 2000 |
+| PERT expected and standard deviation | (low + 4 x most likely + high) / 6; (high - low) / 6 | Malcolm et al. 1959 |
+| P80 and P90 of the total | expected + 0.84 and + 1.28 standard deviations (normal approximation, rows assumed independent) | Standard normal table |
+
+Schedule: E = B + 0.01 x sum of scale factors; months = C x person-months ^ (D + 0.2 x (E - B)); average team size = person-months / months.
+
+### 10.8 References
+
+- Boehm, B. W. 1981. Software Engineering Economics. Prentice Hall.
+- Boehm, B. W., C. Abts, A. W. Brown, S. Chulani, B. K. Clark, E. Horowitz, R. Madachy, D. Reifer and B. Steece. 2000. Software Cost Estimation with COCOMO II. Prentice Hall.
+- Karner, G. 1993. Resource Estimation for Objectory Projects. Objective Systems SF AB.
+- Malcolm, D. G., J. H. Roseboom, C. E. Clark and W. Fazar. 1959. Application of a technique for research and development program evaluation. Operations Research 7 (5).
+- Schneider, G. and J. P. Winters. 2001. Applying Use Cases: A Practical Guide. 2nd edition. Addison-Wesley.
